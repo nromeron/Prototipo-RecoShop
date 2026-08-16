@@ -1,0 +1,147 @@
+# =============================================================================
+# docker-compose.yml — Prototipo P-03 (Trusted ML Artifact Pipeline), Capa 1
+# =============================================================================
+# Demuestra el sub-componente "Artifact Signing and Registry Gate" del
+# patrón P-03 sobre la debilidad D-01 (Confianza Implícita en la Integridad
+# de Artefactos del Model Registry), aplicado al caso de estudio RecoShop.
+#
+# Servicios:
+#   - minio        : almacenamiento de artefactos S3-compatible para MLflow.
+#   - minio-init   : contenedor de un solo uso que crea el bucket necesario.
+#   - mlflow       : servidor MLflow (tracking + Model Registry).
+#   - trainer      : entrena, firma con cosign y registra el modelo.
+#                    También incluye tamper_model.py, que simula el ataque
+#                    de la debilidad D-01 para el caso negativo.
+#   - deployment-gate : verifica la firma del modelo ANTES de aprobarlo.
+#
+# NOTA: este archivo no incluye KServe ni Istio. Esta Capa 1 corre sobre
+# Docker Compose únicamente; en producción, el gate se instancia sobre el
+# pipeline CI/CD (GitHub Actions + ArgoCD) tal como describe el Entregable
+# A4.1 de la tesis, no como un contenedor aislado como aquí.
+# =============================================================================
+
+services:
+
+  minio:
+    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
+    container_name: recoshop-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Consola web de MinIO
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - minio-data:/data
+    networks:
+      - recoshop-net
+
+  # Contenedor de un solo uso: crea el bucket "mlflow-artifacts" antes de que
+  # MLflow intente usarlo. Reintenta hasta que MinIO esté disponible, sin
+  # depender de un healthcheck específico de la imagen de MinIO.
+  minio-init:
+    image: minio/mc:RELEASE.2024-01-13T08-44-48Z
+    container_name: recoshop-minio-init
+    depends_on:
+      - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    entrypoint: >
+      /bin/sh -c "
+        echo 'Esperando a que MinIO esté disponible...' &&
+        until mc alias set localminio http://minio:9000 \"$$MINIO_ROOT_USER\" \"$$MINIO_ROOT_PASSWORD\" 2>/dev/null; do
+          sleep 2;
+        done &&
+        mc mb -p localminio/mlflow-artifacts &&
+        echo 'Bucket mlflow-artifacts listo.'
+      "
+    networks:
+      - recoshop-net
+
+  mlflow:
+    build:
+      context: ./services/mlflow
+    container_name: recoshop-mlflow
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "5000:5000"
+    environment:
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - mlflow-data:/mlflow
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >
+        mlflow server
+        --backend-store-uri sqlite:////mlflow/mlflow.db
+        --default-artifact-root s3://mlflow-artifacts/
+        --host 0.0.0.0
+        --port 5000
+    healthcheck:
+      # Se usa python (siempre presente en la imagen de mlflow) en lugar de
+      # curl, ya que la imagen base no garantiza tener curl instalado.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+    networks:
+      - recoshop-net
+
+  trainer:
+    build:
+      context: ./services/trainer
+    container_name: recoshop-trainer
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-recoshop-ranker}
+      COSIGN_PASSWORD: ${COSIGN_PASSWORD:-}
+      COSIGN_KEY_PATH: /keys/cosign.key
+      RANDOM_SEED: "42"
+      GIT_PYTHON_REFRESH: quiet
+    volumes:
+      - ./keys:/keys:ro
+    networks:
+      - recoshop-net
+    # Este servicio NO se levanta con "docker compose up": se invoca puntualmente
+    # con "docker compose run --rm trainer python <script>.py" (ver scripts/).
+
+  deployment-gate:
+    build:
+      context: ./services/deployment-gate
+    container_name: recoshop-deployment-gate
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-recoshop-ranker}
+      COSIGN_PUB_PATH: /keys/cosign.pub
+    volumes:
+      - ./keys:/keys:ro
+    networks:
+      - recoshop-net
+    # Igual que trainer: se invoca con "docker compose run --rm deployment-gate ...".
+
+volumes:
+  minio-data:
+  mlflow-data:
+
+networks:
+  recoshop-net:
+    driver: bridge

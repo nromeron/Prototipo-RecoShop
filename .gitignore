@@ -1,0 +1,18 @@
+# --- Claves criptográficas del prototipo: NUNCA subir ---
+keys/*
+!keys/.gitkeep
+
+# --- Configuración local (puede contener COSIGN_PASSWORD) ---
+.env
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Salidas y logs locales ---
+*.log
+
+# --- Residuos de Windows/WSL ---
+*Zone.Identifier
+Thumbs.db

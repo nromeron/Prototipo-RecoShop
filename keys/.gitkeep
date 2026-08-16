@@ -1,0 +1,3 @@
+Este directorio se puebla ejecutando ./scripts/generate_keys.sh
+(genera cosign.key y cosign.pub). Está vacío intencionalmente en el
+proyecto entregado.

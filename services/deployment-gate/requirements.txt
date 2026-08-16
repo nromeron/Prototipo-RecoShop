@@ -1,0 +1,3 @@
+# Versiones fijadas deliberadamente para reproducibilidad del prototipo.
+mlflow==2.9.2
+boto3==1.34.51
