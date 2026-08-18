@@ -95,6 +95,21 @@ agosto 2026):
 5. **Finales de línea**: los scripts requieren LF. El `.gitattributes` del
    repositorio lo fuerza; si se editan desde Windows sin clonar con esa
    configuración, normalizar con `sed -i 's/\r$//' scripts/*.sh`.
+6. **Estado del registry entre demos**: el caso negativo de la Capa 1 deja
+  un artefacto manipulado como versión más reciente del Model Registry
+  (por diseño). Las demos posteriores registran siempre una versión
+  fresca para no depender del estado previo; el rechazo del artefacto
+  manipulado por parte del inference-gateway al arrancar es comportamiento
+  correcto de la integración P-03 ↔ P-01 (defensa en profundidad).
+7. **Reconstrucción tras editar código**: los servicios con `build:` congelan
+   su código dentro de la imagen al construirla. Cualquier edición a un `.py`
+   o `Dockerfile` requiere `docker compose build <servicio>` antes de
+   re-ejecutar; de lo contrario el contenedor corre la versión anterior.
+8. **NaN/Infinity por la API JSON**: la serialización JSON estándar
+   (requests ≥ 2.27, `allow_nan=False`) impide inyectar NaN/Infinity por
+   esta interfaz; el caso `invalid-input` usa valores serializables fuera
+   de rango, y el chequeo de no-finitud del Input Validator queda como
+   defensa en profundidad para otros canales de entrada.
 
 ## Convención de códigos de salida
 
@@ -286,3 +301,88 @@ docker compose down -v                # limpieza
   Este prototipo no evalúa si el modelo entrenado es "bueno" en ningún
   sentido de seguridad; solo demuestra que un artefacto alterado después
   de la firma es detectado.
+
+## 9. Capa 2 — P-01 Secure Inference Gateway
+
+Sobre la misma base de la Capa 1, la Capa 2 implementa el patrón **P-01 —
+Secure Inference Gateway**, mitigando **D-02** (extracción del modelo),
+**D-04** (entradas adversariales) y **D-05** (integridad de la
+respuesta). Ver `services/inference-gateway/README.md` para el detalle
+completo de sub-componentes, alcance y limitaciones.
+
+### 9.1 Qué demuestra
+
+| Elemento | Descripción |
+| :--- | :--- |
+| **Patrón** | P-01 — Secure Inference Gateway |
+| **Sub-componentes** | Input Validator (D-04) · Output Controller: top-k limiting + rate limiting (D-02) · Response Signer Ed25519 (D-05) |
+| **Integración con la Capa 1** | Al arrancar, `inference-gateway` descarga el modelo y su firma del mismo Model Registry de P-03 y verifica la firma cosign con la clave pública de la Capa 1 antes de cargarlo. Si la firma no es válida, el servicio termina con error crítico y nunca sirve el modelo. |
+| **Cliente verificador** | `inference-client` ejecuta 4 casos contra `POST /v1/recommend`: `valid`, `invalid-input`, `rate-limit`, `tampered-response`. |
+
+### 9.2 Servicios y archivos nuevos
+
+```
+services/
+├── inference-gateway/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── app.py                 # aplicación FastAPI, orquesta los 3 sub-componentes
+│   ├── input_validator.py     # Sub-componente Input Validator (D-04)
+│   ├── output_controller.py   # Sub-componente Output Controller (D-02)
+│   ├── response_signer.py     # Sub-componente Response Signer (D-05)
+│   └── README.md
+└── inference-client/
+    ├── Dockerfile
+    ├── requirements.txt
+    └── client_demo.py         # cliente verificador, 4 casos
+
+scripts/
+├── generate_response_keys.sh  # genera el par Ed25519 del Response Signer
+└── run_layer2_demo.sh         # orquesta la demo completa de la Capa 2
+```
+
+### 9.3 Prerrequisitos adicionales
+
+- Puerto adicional libre en la máquina anfitriona: `8080` (API del
+  inference-gateway).
+- Las claves de la Capa 1 (`keys/cosign.key`, `keys/cosign.pub`) deben
+  existir antes de levantar el gateway (ver §5.2).
+
+### 9.4 Cómo ejecutar la Capa 2
+
+```bash
+./scripts/generate_response_keys.sh
+./scripts/run_layer2_demo.sh
+```
+
+`run_layer2_demo.sh` verifica las claves necesarias, levanta MinIO +
+MLflow, entrena un modelo si no existe ninguno registrado (reutilizando
+`trainer` de la Capa 1 sin modificarlo), levanta `inference-gateway` y
+espera su healthcheck, y ejecuta los 4 casos del cliente en orden,
+terminando con un resumen y saliendo con código 0 solo si los 4 casos
+dieron el resultado esperado.
+
+### 9.5 Manejo de errores esperado (Capa 2)
+
+| Situación | Comportamiento |
+| :--- | :--- |
+| Firma del modelo inválida al arrancar el gateway | `app.py` termina el proceso con código de salida distinto de cero antes de exponer `/v1/recommend`; el contenedor queda en estado `exited` y `run_layer2_demo.sh` lo detecta y muestra los logs. |
+| Faltan las claves Ed25519 de respuesta | `generate_response_keys.sh` y `run_layer2_demo.sh` verifican su existencia antes de continuar. |
+| Candidato fuera de rango, tipo incorrecto o NaN/Inf | `input_validator.py` responde `422` con `{"error": "input_validation_failed", "details": [...]}`. |
+| Más de 30 solicitudes/minuto (configurable) de un mismo `client_id` | `output_controller.py` responde `429` con `{"error": "rate_limit_exceeded"}`. |
+| Respuesta alterada después de firmarse | La verificación Ed25519 en `client_demo.py` (o en cualquier consumidor) falla explícitamente; no hay forma de "arreglar" la firma sin la clave privada del Response Signer. |
+
+### 9.6 Relación con el resto de la tesis
+
+- **A4.4 §3.1 / §4.1** documentan los cambios concretos y el análisis de
+  impacto de P-01 sobre RecoShop; esta capa los implementa para D-02,
+  D-04 y D-05 (P-01 no cubre D-01, D-03, D-06 ni D-07).
+- El rate limiting se justifica como control general de seguridad de API
+  en microservicios (NIST SP 800-204), y el top-k limiting como Output
+  Information Limiting (P-01, candidato A3) -- **no** como una
+  implementación de AMAO (Jiang et al.), que cubre detección de consultas
+  maliciosas y respuesta adaptativa y queda fuera de alcance de esta capa.
+- Igual que en la Capa 1, la firma (aquí, Ed25519 sobre la respuesta)
+  prueba integridad, no benignidad: un modelo legítimamente firmado y sin
+  manipular puede seguir produciendo una recomendación de mala calidad;
+  eso no es algo que el Response Signer esté diseñado para detectar.

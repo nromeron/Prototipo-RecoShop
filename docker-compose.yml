@@ -138,6 +138,53 @@ services:
       - recoshop-net
     # Igual que trainer: se invoca con "docker compose run --rm deployment-gate ...".
 
+  inference-gateway:
+    build:
+      context: ./services/inference-gateway
+    container_name: recoshop-inference-gateway
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-recoshop-ranker}
+      COSIGN_PUB_PATH: /keys/cosign.pub
+      RESPONSE_SIGNING_KEY_PATH: /keys/response_ed25519.key
+      TOP_K: ${TOP_K:-5}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+    volumes:
+      - ./keys:/keys:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - recoshop-net
+    # Servicio persistente: se levanta con "docker compose up -d inference-gateway".
+
+  inference-client:
+    build:
+      context: ./services/inference-client
+    container_name: recoshop-inference-client
+    environment:
+      GATEWAY_URL: http://inference-gateway:8080
+      RESPONSE_PUB_KEY_PATH: /keys/response_ed25519.pub
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+    volumes:
+      - ./keys:/keys:ro
+    networks:
+      - recoshop-net
+    # Sin puertos propios: se invoca con "docker compose run --rm inference-client
+    # python client_demo.py --case <valid|invalid-input|rate-limit|tampered-response>".
+
+
 volumes:
   minio-data:
   mlflow-data:
