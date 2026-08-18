@@ -184,10 +184,35 @@ services:
     # Sin puertos propios: se invoca con "docker compose run --rm inference-client
     # python client_demo.py --case <valid|invalid-input|rate-limit|tampered-response>".
 
+  feedback-gate:
+    build:
+      context: ./services/feedback-gate
+    container_name: recoshop-feedback-gate
+    environment:
+      FEEDBACK_DATA_DIR: /app/data
+      RANDOM_SEED: "42"
+      LOG_TO_MLFLOW: ${LOG_TO_MLFLOW:-false}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      KS_ALPHA: ${KS_ALPHA:-0.05}
+      KS_STAT_THRESHOLD: ${KS_STAT_THRESHOLD:-0.04}
+      GUARDIAN_MIN_FLAGGED_FEATURES: ${GUARDIAN_MIN_FLAGGED_FEATURES:-1}
+      MIN_GROUP_SIZE: ${MIN_GROUP_SIZE:-20}
+      CONCENTRATION_CATEGORY_THRESHOLD: ${CONCENTRATION_CATEGORY_THRESHOLD:-0.6}
+      CONCENTRATION_TEMPORAL_THRESHOLD: ${CONCENTRATION_TEMPORAL_THRESHOLD:-0.85}
+      TEMPORAL_CONCENTRATION_WINDOW_SPAN: ${TEMPORAL_CONCENTRATION_WINDOW_SPAN:-2}
+      LABEL_MANIPULATION_DELTA_THRESHOLD: ${LABEL_MANIPULATION_DELTA_THRESHOLD:-0.06}
+    volumes:
+      - feedback-data:/app/data
+    networks:
+      - recoshop-net
+    # Sin depends_on: esta capa no necesita MLflow/MinIO para su demo. Se
+    # invoca con "docker compose run --rm --no-deps feedback-gate python
+    # generate_feedback.py" y "... python feedback_gate.py --batch <ruta>".
 
 volumes:
   minio-data:
   mlflow-data:
+  feedback-data:
 
 networks:
   recoshop-net:
