@@ -21,6 +21,10 @@ Relación con la tesis:
     intencional, porque en el escenario de ataque de D-01 un atacante que
     solo comprometa el registry (y no la clave de firma) no puede producir
     una firma válida sobre un artefacto sustituido.
+  - Junto al modelo se genera y FIRMA su ML-BOM (CycloneDX v1.7, ECMA-424):
+    el documento de enlace que P-03 prescribe entre el artefacto, los datos
+    que lo produjeron y sus dependencias. El deployment-gate exige que el
+    hash del modelo coincida con el declarado en un ML-BOM con firma válida.
 """
 
 import hashlib
@@ -35,6 +39,7 @@ from mlflow.tracking import MlflowClient
 from sklearn.metrics import ndcg_score
 
 from generate_data import generate_recoshop_dataset
+from mlbom import build_mlbom, sha256_of_dataframe
 from sign_model import CosignNotFoundError, CosignSigningError, sign_artifact
 
 RANDOM_SEED = int(os.environ.get("RANDOM_SEED", "42"))
@@ -113,14 +118,16 @@ def train_and_evaluate():
 
     print(f"[train] NDCG@10 promedio en el conjunto de evaluación: {mean_ndcg_at_10:.4f}")
 
-    return model, mean_ndcg_at_10, len(train_sessions), len(eval_sessions)
+    return model, mean_ndcg_at_10, len(train_sessions), len(eval_sessions), df
 
 
 def main():
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
     mlflow.set_experiment("recoshop-p03-layer1")
 
-    model, ndcg_at_10, n_train_sessions, n_eval_sessions = train_and_evaluate()
+    model, ndcg_at_10, n_train_sessions, n_eval_sessions, dataset_df = train_and_evaluate()
+    dataset_hash = sha256_of_dataframe(dataset_df)
+    print(f"[train] SHA-256 del dataset de entrenamiento: {dataset_hash}")
 
     with mlflow.start_run() as run:
         run_id = run.info.run_id
@@ -136,6 +143,8 @@ def main():
             model_path = os.path.join(tmp_dir, "model.txt")
             sig_path = os.path.join(tmp_dir, "model.txt.sig")
             metadata_path = os.path.join(tmp_dir, "metadata.json")
+            mlbom_path = os.path.join(tmp_dir, "mlbom.cdx.json")
+            mlbom_sig_path = os.path.join(tmp_dir, "mlbom.cdx.json.sig")
 
             # LightGBM "Booster.save_model" produce un archivo de texto
             # determinista: cualquier alteración de un solo byte cambia su
@@ -157,11 +166,43 @@ def main():
                 print(f"ERROR CRÍTICO: no fue posible firmar el modelo: {exc}")
                 raise SystemExit(1)
 
+            # --- ML-BOM: documento de enlace de P-03, firmado con la misma
+            # --- clave. Vincula modelo <-> dataset <-> dependencias. ---
+            bom = build_mlbom(
+                model_name=MLFLOW_MODEL_NAME,
+                run_id=run_id,
+                model_sha256=artifact_hash_before_signing,
+                dataset_sha256=dataset_hash,
+                n_dataset_rows=len(dataset_df),
+                feature_columns=FEATURE_COLUMNS,
+                ndcg_at_10=ndcg_at_10,
+                random_seed=RANDOM_SEED,
+                n_train_sessions=n_train_sessions,
+                n_eval_sessions=n_eval_sessions,
+            )
+            with open(mlbom_path, "w", encoding="utf-8") as f:
+                json.dump(bom, f, indent=2, ensure_ascii=False)
+            mlbom_hash = sha256_of_file(mlbom_path)
+            print(f"[train] ML-BOM generado (CycloneDX {bom['specVersion']}): SHA-256 {mlbom_hash}")
+
+            try:
+                sign_artifact(
+                    artifact_path=mlbom_path,
+                    private_key_path=COSIGN_KEY_PATH,
+                    signature_output_path=mlbom_sig_path,
+                )
+            except (CosignNotFoundError, CosignSigningError, FileNotFoundError) as exc:
+                print(f"ERROR CRÍTICO: no fue posible firmar el ML-BOM: {exc}")
+                raise SystemExit(1)
+
             metadata = {
                 "model_name": MLFLOW_MODEL_NAME,
                 "mlflow_run_id": run_id,
                 "ndcg_at_10": ndcg_at_10,
                 "sha256_at_signing_time": artifact_hash_before_signing,
+                "dataset_sha256": dataset_hash,
+                "mlbom_sha256": mlbom_hash,
+                "mlbom_format": f"CycloneDX {bom['specVersion']} (ECMA-424)",
                 "signature_algorithm": "cosign (par de claves ECDSA local, sin Rekor)",
                 "random_seed": RANDOM_SEED,
                 "note": (
@@ -174,10 +215,10 @@ def main():
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2, ensure_ascii=False)
 
-            # Se registran los TRES artefactos (modelo, firma, metadatos) en
-            # el mismo run de MLflow, bajo la ruta "model/". Esto materializa
-            # el requisito de "registrar el modelo en MLflow con su firma y
-            # metadatos" exigido por P-03.
+            # Se registran los CINCO artefactos (modelo y su firma, ML-BOM y
+            # su firma, metadatos) en el mismo run de MLflow, bajo la ruta
+            # "model/". Esto materializa el requisito de P-03 de registrar el
+            # modelo con su firma, sus metadatos y su documento de enlace.
             mlflow.log_artifacts(tmp_dir, artifact_path="model")
 
         # Registrar una NUEVA versión del modelo en el Model Registry. Cada
@@ -204,6 +245,12 @@ def main():
             key="sha256_at_signing_time",
             value=artifact_hash_before_signing,
         )
+        client.set_model_version_tag(
+            name=MLFLOW_MODEL_NAME,
+            version=registered_model.version,
+            key="mlbom_sha256",
+            value=mlbom_hash,
+        )
 
         print(
             f"[train] Modelo registrado: '{MLFLOW_MODEL_NAME}' versión "
@@ -212,6 +259,10 @@ def main():
         print(
             "[train] El modelo fue firmado ANTES de registrarse en MLflow, "
             "conforme al sub-componente Artifact Signing and Registry Gate de P-03."
+        )
+        print(
+            "[train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma "
+            "clave y registrado junto al modelo."
         )
         print(
             f"[train] Consulta el run en la UI de MLflow: "

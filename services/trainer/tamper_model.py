@@ -27,8 +27,18 @@ Flujo:
 Después de ejecutar este script, el deployment-gate debe RECHAZAR el
 modelo, porque el hash del artefacto ya no coincide con el hash que fue
 firmado originalmente.
+
+Modos de ataque (argumento --mode):
+  append       (por defecto) Añade bytes al modelo de la última versión.
+               Detectado por C2 (vínculo con el ML-BOM) y C3 (firma).
+  swap-signed  Sustituye el modelo Y su firma de la última versión por los de
+               la versión anterior: un artefacto auténtico, firmado con la
+               clave legítima, pero que NO es el que esta versión declara.
+               C3 pasa (la firma es válida); solo C2 lo detecta. Demuestra el
+               aporte específico del ML-BOM firmado como documento de enlace.
 """
 
+import argparse
 import os
 import sys
 from urllib.parse import urlparse
@@ -70,6 +80,55 @@ def get_latest_model_artifact_s3_location(model_name: str):
     return bucket, key, latest.version
 
 
+def _s3_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=os.environ.get("MLFLOW_S3_ENDPOINT_URL", "http://minio:9000"),
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+    )
+
+
+def _model_prefix(client: MlflowClient, model_version):
+    """(bucket, prefijo s3 de la carpeta model/) de una versión registrada."""
+    artifact_uri = client.get_run(model_version.run_id).info.artifact_uri
+    parsed = urlparse(artifact_uri)
+    return parsed.netloc, f"{parsed.path.lstrip('/')}/model"
+
+
+def swap_signed(model_name: str) -> None:
+    """
+    Sustituye model.txt y model.txt.sig de la última versión por los de la
+    versión anterior. El atacante no necesita la clave de firma: reutiliza un
+    artefacto que ya fue firmado legítimamente.
+    """
+    client = MlflowClient()
+    versions = sorted(
+        client.search_model_versions(f"name='{model_name}'"), key=lambda v: int(v.version)
+    )
+    if len(versions) < 2:
+        raise RuntimeError(
+            "El modo swap-signed requiere al menos dos versiones registradas "
+            "(el script run_layer1_swap_signed_case.sh las crea)."
+        )
+    source, target = versions[-2], versions[-1]
+    src_bucket, src_prefix = _model_prefix(client, source)
+    dst_bucket, dst_prefix = _model_prefix(client, target)
+    s3 = _s3_client()
+    print(
+        f"[tamper_model] Modo swap-signed: se copiará el modelo firmado de la versión "
+        f"{source.version} sobre la versión {target.version}."
+    )
+    for name in ("model.txt", "model.txt.sig"):
+        body = s3.get_object(Bucket=src_bucket, Key=f"{src_prefix}/{name}")["Body"].read()
+        s3.put_object(Bucket=dst_bucket, Key=f"{dst_prefix}/{name}", Body=body)
+        print(f"[tamper_model]   {name}: versión {source.version} -> versión {target.version}")
+    print(
+        "[tamper_model] NOTA: el ML-BOM de la versión atacada NO fue modificado "
+        "(el atacante no puede re-firmarlo sin la clave privada)."
+    )
+
+
 def tamper_object(bucket: str, key: str) -> None:
     s3 = boto3.client(
         "s3",
@@ -97,7 +156,19 @@ def tamper_object(bucket: str, key: str) -> None:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Simulación de ataques D-01 (Capa 1)")
+    parser.add_argument("--mode", choices=["append", "swap-signed"], default="append")
+    args = parser.parse_args()
+
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
+
+    if args.mode == "swap-signed":
+        swap_signed(MLFLOW_MODEL_NAME)
+        print(
+            "[tamper_model] Simulación swap-signed completada. "
+            "Ejecuta ahora el deployment-gate para observar el rechazo."
+        )
+        return
 
     bucket, key, version = get_latest_model_artifact_s3_location(MLFLOW_MODEL_NAME)
     print(

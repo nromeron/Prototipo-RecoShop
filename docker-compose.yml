@@ -111,6 +111,7 @@ services:
       COSIGN_KEY_PATH: /keys/cosign.key
       RANDOM_SEED: "42"
       GIT_PYTHON_REFRESH: quiet
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ./keys:/keys:ro
     networks:
@@ -132,6 +133,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
       MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME:-recoshop-ranker}
       COSIGN_PUB_PATH: /keys/cosign.pub
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ./keys:/keys:ro
     networks:
@@ -177,6 +179,7 @@ services:
       GATEWAY_URL: http://inference-gateway:8080
       RESPONSE_PUB_KEY_PATH: /keys/response_ed25519.pub
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ./keys:/keys:ro
     networks:
@@ -201,6 +204,7 @@ services:
       CONCENTRATION_TEMPORAL_THRESHOLD: ${CONCENTRATION_TEMPORAL_THRESHOLD:-0.85}
       TEMPORAL_CONCENTRATION_WINDOW_SPAN: ${TEMPORAL_CONCENTRATION_WINDOW_SPAN:-2}
       LABEL_MANIPULATION_DELTA_THRESHOLD: ${LABEL_MANIPULATION_DELTA_THRESHOLD:-0.06}
+      PYTHONUNBUFFERED: "1"
     volumes:
       - feedback-data:/app/data
     networks:
