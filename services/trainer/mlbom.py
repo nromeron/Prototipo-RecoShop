@@ -66,6 +66,21 @@ def _library_components():
     return components
 
 
+def _provenance_properties(provenance):
+    if not provenance:
+        return [{"name": "recoshop:provenance:status", "value": "no-verificada"}]
+    return [
+        {"name": "recoshop:provenance:status", "value": "verificada"},
+        {"name": "recoshop:provenance:source", "value": provenance["source"]},
+        {"name": "recoshop:provenance:endpoint", "value": provenance["endpoint"]},
+        {"name": "recoshop:provenance:exported_at", "value": provenance["exported_at_utc"]},
+        {"name": "recoshop:provenance:accepted_at", "value": provenance["accepted_at_utc"]},
+        {"name": "recoshop:provenance:manifest_sha256", "value": provenance["manifest_sha256"]},
+        {"name": "recoshop:provenance:record",
+         "value": f"s3://recoshop-provenance/datasets/{provenance['dataset_sha256']}.json"},
+    ]
+
+
 def build_mlbom(
     *,
     model_name: str,
@@ -78,6 +93,7 @@ def build_mlbom(
     random_seed: int,
     n_train_sessions: int,
     n_eval_sessions: int,
+    provenance: dict = None,
 ) -> dict:
     """Retorna el ML-BOM como diccionario listo para serializar a JSON."""
     libraries = _library_components()
@@ -137,6 +153,9 @@ def build_mlbom(
                 "classification": "sintético, sin datos personales",
             }
         ],
+        # Enlace con la Compuerta de Procedencia de Datos (P-03): si el lote
+        # pasó por ella, su registro queda declarado en el ML-BOM firmado.
+        "properties": _provenance_properties(provenance),
     }
 
     return {

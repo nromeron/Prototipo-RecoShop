@@ -26,6 +26,8 @@ mkdir -p "$EVIDENCE_DIR"
 
 # Demos en orden de ejecución: "nombre_del_log|script"
 DEMOS=(
+  "capa1_procedencia_datos|run_layer1_provenance_demo.sh"
+  "capa1_validador_modelos_externos|run_layer1_external_model_demo.sh"
   "capa1_caso_positivo|run_layer1_positive_case.sh"
   "capa1_caso_negativo_append|run_layer1_negative_case.sh"
   "capa1_caso_negativo_swap_signed|run_layer1_swap_signed_case.sh"

@@ -30,7 +30,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY generate_data.py train.py sign_model.py tamper_model.py mlbom.py promotion_gate.py ./
+COPY generate_data.py train.py sign_model.py tamper_model.py mlbom.py promotion_gate.py \
+     external_trust.py provenance_gate.py external_model_validator.py ./
 
 # Sin ENTRYPOINT fijo: cada script se invoca explícitamente desde
 # "docker compose run --rm trainer python <script>.py" (ver scripts/).

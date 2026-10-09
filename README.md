@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-10%2F10_demos_·_30%2F30_veredictos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos_·_38%2F38_veredictos-2EA043)
 
 </div>
 
@@ -91,6 +91,8 @@ flowchart TB
     end
 
     subgraph L1["Capa 1 · P-03"]
+        PROV["trainer · provenance_gate<br/>Compuerta de Procedencia"]
+        EXT["trainer · external_model_validator<br/>Validador de Modelos Externos"]
         TRAINER["trainer<br/>entrena · firma · ML-BOM"]
         GATE["deployment-gate<br/>controles C1 · C2 · C3"]
     end
@@ -105,6 +107,10 @@ flowchart TB
         PG["trainer · promotion_gate<br/>Compuerta de Promoción"]
     end
 
+    SRC[("external-sources<br/>socio · proveedor")]
+    SRC -- "lote + manifiesto firmados" --> PROV
+    SRC -- "modelo base firmado" --> EXT
+    PROV -. "registro de procedencia" .-> TRAINER
     TRAINER -- "registra modelo + ML-BOM firmados" --> MLFLOW
     GATE -- "verifica antes de aprobar" --> MLFLOW
     GW -- "verifica firma y ML-BOM al arrancar" --> MLFLOW
@@ -117,7 +123,12 @@ flowchart TB
 
 ### Capa 1 · P-03 Trusted ML Artifact Pipeline
 
-**Debilidad:** D-01. Si el Model Registry confía en que lo que guarda es lo
+**Debilidades:** D-01, D-06 y D-07. La capa implementa los cuatro
+sub-componentes del patrón: la Compuerta de Procedencia de Datos y el
+Validador de Modelos Externos, a la entrada, y la firma con ML-BOM y el
+`deployment-gate`, a la salida.
+
+**D-01.** Si el Model Registry confía en que lo que guarda es lo
 que se entrenó, quien comprometa el almacenamiento puede sustituir el modelo
 en producción sin que nadie lo note.
 
@@ -172,6 +183,68 @@ es un modelo auténtico de una versión anterior, ligeramente peor
 (NDCG@10 de 0.8796 frente a 0.8818). Un gate que solo verificara firmas lo
 aprobaría. Lo detiene el vínculo con el ML-BOM firmado, que declara
 exactamente qué artefacto corresponde a cada versión.
+
+#### Compuerta de Procedencia de Datos (D-07)
+
+Los terceros se simulan sobre el mismo MinIO, en tres espacios separados:
+`external-sources` (lo que publican el socio y el proveedor; no confiable),
+`recoshop-trust` (las claves públicas de las fuentes registradas) y
+`recoshop-provenance` (los registros que emiten las compuertas). Cada
+tercero tiene su propio par de claves cosign, distinto del de RecoShop.
+
+El socio comercial publica la exportación de eventos con un **manifiesto
+firmado** (fuente, punto de exportación, filas, versión de esquema y
+SHA-256 del lote). `provenance_gate.py` aplica cuatro controles y los
+reporta todos:
+
+| Control | Pregunta que responde |
+|---|---|
+| **1** Firma del manifiesto | ¿Lo firmó la clave registrada de esa fuente? |
+| **2** Integridad | ¿El lote descargado es el que el manifiesto declara (SHA-256 y filas)? |
+| **3** Esquema | ¿Columnas, tipos, rangos y formato de identificadores esperados? |
+| **4** Validación estadística | ¿La distribución se parece a la exportación anterior aceptada (KS por característica y proporción de relevancia máxima)? |
+
+| Escenario | 1 | 2 | 3 | 4 | Decisión |
+|---|:---:|:---:|:---:|:---:|---|
+| Lote legítimo del socio | ✅ | ✅ | ✅ | ✅ | **Aceptado** (0) |
+| Lote alterado después de la firma | ✅ | ❌ | ✅ | ❌ | **Rechazado** (1) |
+| Feed suplantado con clave no registrada | ❌ | ✅ | ✅ | ❌ | **Rechazado** (1) |
+| Socio comprometido: 10 % de registros falsificados, firmados | ✅ | ✅ | ✅ | ❌ | **Cuarentena** (4) |
+
+Al aceptar un lote, la compuerta escribe su **registro de procedencia**.
+`train.py` lo busca por el SHA-256 de su dataset y lo declara en el ML-BOM
+firmado (`recoshop:provenance:*`): el lote legítimo es el mismo dataset que
+entrena la Capa 1, así que el modelo de referencia queda enlazado con su
+fuente sin cambiar su hash. Un dataset sin registro queda declarado como
+`no-verificada`.
+
+#### Validador de Modelos Externos (D-06)
+
+El proveedor publica un modelo base preentrenado, firmado.
+`external_model_validator.py` aplica tres controles:
+
+| Control | Pregunta que responde |
+|---|---|
+| **1** Firma del proveedor | ¿Lo firmó la clave registrada de ese repositorio? |
+| **2** Escaneo sin cargar | ¿El formato es seguro? Solo se admite el formato de texto de LightGBM; un pickle se inspecciona con `pickletools`, sin deserializarlo, y se rechaza siempre |
+| **3** Comportamiento en entorno aislado | ¿Rinde en el conjunto canónico de seguridad y no tiene un disparador estrecho? |
+
+La búsqueda de disparadores recorre, por característica, las regiones entre
+los umbrales de división del propio modelo, fija cada región en el peor
+candidato de cada sesión y mide con qué frecuencia pasa al primer lugar. Una
+puerta trasera aparece como un **pico aislado** frente a las regiones
+vecinas (umbral 0.50).
+
+| Escenario | 1 | 2 | 3 | Decisión |
+|---|:---:|:---:|:---:|---|
+| Modelo base legítimo | ✅ | ✅ | ✅ | **Aceptado** (0) |
+| Suplantación tipográfica del repositorio | ❌ | ✅ | ✅ | **Rechazado** (1) |
+| Pickle firmado que ejecuta código al cargarse | ✅ | ❌ | — | **Rechazado** (1) |
+| Modelo firmado con puerta trasera (`price = 13.37`) | ✅ | ✅ | ❌ | **Cuarentena** (4) |
+
+El pickle malicioso nunca se carga, y su carga útil solo imprimiría un
+mensaje. La búsqueda cubre disparadores de una sola característica en una
+región estrecha; los disparadores conjuntivos o distribuidos quedan fuera.
 
 ### Capa 2 · P-01 Secure Inference Gateway
 
@@ -325,7 +398,7 @@ varía entre −0.003 y +0.015.
 ## Evidencia reproducible
 
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
-las diez demostraciones y guarda cada salida en [`evidence/`](evidence/) con
+las doce demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
 identificadores de imagen), un resumen y un manifiesto SHA-256:
 
@@ -335,6 +408,8 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 
 | Demostración | Resultado |
 |---|---|
+| Capa 1 · Compuerta de Procedencia de Datos | ✅ 1 / 1 / 4 / 0 |
+| Capa 1 · Validador de Modelos Externos | ✅ 0 / 1 / 1 / 4 |
 | Capa 1 · caso positivo | ✅ aprobado |
 | Capa 1 · bytes alterados | ✅ rechazado |
 | Capa 1 · sustitución firmada | ✅ rechazado |
@@ -367,6 +442,8 @@ chmod +x scripts/*.sh
 ./scripts/generate_response_keys.sh     # Ed25519: firma de respuestas
 
 # Capa 1 · P-03
+./scripts/run_layer1_provenance_demo.sh
+./scripts/run_layer1_external_model_demo.sh
 ./scripts/run_layer1_positive_case.sh
 ./scripts/run_layer1_negative_case.sh
 ./scripts/run_layer1_swap_signed_case.sh
@@ -392,10 +469,10 @@ La primera ejecución construye las imágenes y puede tardar varios minutos.
 
 Hay dos niveles, deliberadamente distintos:
 
-- **Componentes** (`verify_and_deploy.py`, `feedback_gate.py`,
-  `promotion_gate.py`): implementan el contrato semántico — `0` aceptar ·
+- **Componentes** (`provenance_gate.py`, `external_model_validator.py`,
+  `verify_and_deploy.py`, `feedback_gate.py`, `promotion_gate.py`): implementan el contrato semántico — `0` aceptar ·
   `1` rechazar · `2` error de infraestructura · `3` alerta por drift natural ·
-  `4` cuarentena (del lote, o retención del modelo candidato para revisión
+  `4` cuarentena (del lote o del modelo base, o retención del modelo candidato para revisión
   humana).
 - **Scripts de demo**: comparan el código del componente con el esperado y
   devuelven `0` si el comportamiento fue el correcto. Un rechazo esperado
@@ -413,7 +490,8 @@ entorno, y los scripts lo reportan por separado.
 ├── scripts/                     un orquestador por demo + captura de evidencia
 └── services/
     ├── mlflow/                  Tracking + Model Registry
-    ├── trainer/                 entrenamiento, firma, ML-BOM, ataques y Compuerta de Promoción
+    ├── trainer/                 procedencia, modelos externos, entrenamiento, firma, ML-BOM,
+    │                            ataques y Compuerta de Promoción
     ├── deployment-gate/         controles C1–C3 antes de aprobar un despliegue
     ├── inference-gateway/       P-01: validador, controlador de salida, firmante y registro de sospecha
     ├── inference-client/        cliente verificador con los 5 casos
@@ -451,10 +529,12 @@ producción:
   (*low-and-slow*) queda fuera del alcance de un detector por lote.
 - Firma con claves locales y **sin registro de transparencia** (Rekor). En
   producción, las claves vivirían en un KMS con rotación y revocación.
-- **P-03** se implementa parcialmente: el Artifact Signing Gate y el ML-BOM.
-  El Data Provenance Gate y el validador de modelos externos quedan como
-  diseño; como el prototipo entrena desde cero, el ML-BOM vincula el dataset
-  y el artefacto, pero no un modelo base.
+- **P-03** implementa sus cuatro sub-componentes. Los terceros (socio y
+  proveedor) se simulan en el mismo MinIO, con claves propias. El prototipo
+  entrena desde cero: el modelo base validado no se usa como punto de
+  partida, así que el ML-BOM enlaza el dataset con su procedencia, pero no
+  un modelo base. La búsqueda de disparadores cubre una característica a la
+  vez.
 - **P-02** implementa sus tres sub-componentes. La señal del Monitor llega a
   la Compuerta de Promoción como argumento del script, no por un canal
   compartido en ejecución.
