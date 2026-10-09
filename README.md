@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-8%2F8_demos_·_18%2F18_veredictos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-10%2F10_demos_·_30%2F30_veredictos-2EA043)
 
 </div>
 
@@ -102,12 +102,14 @@ flowchart TB
 
     subgraph L3["Capa 3 · P-02"]
         FB["feedback-gate<br/>Guardián + Monitor"]
+        PG["trainer · promotion_gate<br/>Compuerta de Promoción"]
     end
 
     TRAINER -- "registra modelo + ML-BOM firmados" --> MLFLOW
     GATE -- "verifica antes de aprobar" --> MLFLOW
     GW -- "verifica firma y ML-BOM al arrancar" --> MLFLOW
     CLIENT -- "POST /v1/recommend" --> GW
+    FB -. "señal del Monitor" .-> PG
     KEYS -.-> TRAINER
     KEYS -.-> GATE
     KEYS -.-> GW
@@ -276,12 +278,54 @@ limpios se aceptan y los adversariales van a cuarentena **en las seis**: la
 amplitud mueve la sensibilidad a la deriva natural, no la detección del
 ataque.
 
+#### Compuerta de Promoción del Modelo Reentrenado
+
+El tercer sub-componente actúa al final del ciclo: decide si el modelo
+**reentrenado** con la retroalimentación puede reemplazar al vigente. Un
+ataque que reparte su contaminación por debajo de los umbrales del Monitor
+llega hasta aquí; la compuerta lo busca en el **comportamiento del modelo**,
+no en los datos.
+
+`promotion_gate.py` (servicio `trainer`) reentrena un candidato con el corpus
+original más 300 sesiones de retroalimentación y lo compara con el modelo
+vigente sobre un **conjunto canónico de seguridad** (1.500 sesiones de
+semillas propias, independientes del corpus, versionado por su SHA-256):
+
+- **Degradación global:** NDCG@10 del candidato frente al vigente
+  (tolerancia 0.02).
+- **Degradación selectiva por subpoblación:** exactitud de ordenamiento por
+  pares *dentro* de cada categoría de producto (umbral de caída 0.03). Detecta
+  un modelo que empeora para un grupo concreto sin que la métrica global lo
+  muestre.
+- **Señal del Monitor** (`--monitor-signal`): alerta adversarial o no.
+
+En la retroalimentación envenenada, una red de bots simula compras de los
+productos **menos** populares de la categoría 3 en el 60 % de las sesiones. El
+candidato resultante conserva el NDCG@10 global (caída de 0.004) pero ordena
+peor la categoría 3 (caída de 0.074 en exactitud por pares), mientras las
+otras siete categorías se mueven menos de 0.016.
+
+| Retroalimentación | Señal del Monitor | Decisión |
+|---|---|---|
+| limpia | sin alerta | **Aprobado** · exit 0 |
+| envenenada | sin alerta | **Retenido** para revisión humana · exit 4 |
+| envenenada | alerta adversarial | **Rechazado** · exit 1 |
+| limpia | alerta adversarial | **Retenido** para revisión humana · exit 4 |
+
+Un candidato retenido o rechazado no se promueve: el modelo vigente sigue en
+producción, y cada decisión deja un registro de auditoría en JSON con los
+umbrales, los resúmenes de ambos modelos y del conjunto canónico, y los deltas
+por categoría. Con seis semillas de la retroalimentación, los **12
+veredictos** coinciden con lo esperado: la caída en la categoría 3 va de 0.060
+a 0.087 con la retroalimentación envenenada, y ninguna categoría cae más de
+0.011 con la limpia.
+
 ---
 
 ## Evidencia reproducible
 
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
-las ocho demostraciones y guarda cada salida en [`evidence/`](evidence/) con
+las diez demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
 identificadores de imagen), un resumen y un manifiesto SHA-256:
 
@@ -299,6 +343,8 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 | Capa 3 · demo con semilla 42 | ✅ 0 / 3 / 4 |
 | Capa 3 · sensibilidad | ✅ 18/18 |
 | Capa 3 · frontera (+5 %, +0.03) | ✅ alerta natural 3/6 · limpio y adversarial 6/6 |
+| Capa 3 · Compuerta de Promoción | ✅ 0 / 4 / 1 / 4 |
+| Capa 3 · Compuerta de Promoción, sensibilidad | ✅ 12/12 |
 
 El pipeline es determinista: con la misma semilla, el dataset y el modelo
 producen el mismo hash en cada entrenamiento
@@ -333,6 +379,8 @@ chmod +x scripts/*.sh
 ./scripts/run_layer3_demo.sh
 ./scripts/run_layer3_seeds.sh
 ./scripts/run_layer3_seeds_low_amplitude.sh
+./scripts/run_layer3_promotion_demo.sh
+./scripts/run_layer3_promotion_seeds.sh
 
 # O todo junto, con evidencia
 ./scripts/capture_evidence.sh
@@ -344,9 +392,11 @@ La primera ejecución construye las imágenes y puede tardar varios minutos.
 
 Hay dos niveles, deliberadamente distintos:
 
-- **Componentes** (`verify_and_deploy.py`, `feedback_gate.py`): implementan
-  el contrato semántico — `0` aceptar · `1` rechazar · `2` error de
-  infraestructura · `3` alerta por drift natural · `4` cuarentena.
+- **Componentes** (`verify_and_deploy.py`, `feedback_gate.py`,
+  `promotion_gate.py`): implementan el contrato semántico — `0` aceptar ·
+  `1` rechazar · `2` error de infraestructura · `3` alerta por drift natural ·
+  `4` cuarentena (del lote, o retención del modelo candidato para revisión
+  humana).
 - **Scripts de demo**: comparan el código del componente con el esperado y
   devuelven `0` si el comportamiento fue el correcto. Un rechazo esperado
   termina, por tanto, en `0`.
@@ -363,7 +413,7 @@ entorno, y los scripts lo reportan por separado.
 ├── scripts/                     un orquestador por demo + captura de evidencia
 └── services/
     ├── mlflow/                  Tracking + Model Registry
-    ├── trainer/                 entrenamiento, firma, ML-BOM y simulación de ataques
+    ├── trainer/                 entrenamiento, firma, ML-BOM, ataques y Compuerta de Promoción
     ├── deployment-gate/         controles C1–C3 antes de aprobar un despliegue
     ├── inference-gateway/       P-01: validador, controlador de salida, firmante y registro de sospecha
     ├── inference-client/        cliente verificador con los 5 casos
@@ -405,8 +455,9 @@ producción:
   El Data Provenance Gate y el validador de modelos externos quedan como
   diseño; como el prototipo entrena desde cero, el ML-BOM vincula el dataset
   y el artefacto, pero no un modelo base.
-- **P-02** implementa el Guardián y el Monitor; el Gate de Promoción queda
-  como diseño.
+- **P-02** implementa sus tres sub-componentes. La señal del Monitor llega a
+  la Compuerta de Promoción como argumento del script, no por un canal
+  compartido en ejecución.
 
 <details>
 <summary><b>Notas de reproducibilidad</b> — hallazgos de la validación en runtime</summary>

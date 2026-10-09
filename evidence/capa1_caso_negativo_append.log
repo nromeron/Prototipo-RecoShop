@@ -1,0 +1,94 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer1_negative_case.sh
+ Fecha (UTC):     2026-10-09T15:06:59Z
+ Commit:          2fa2a6d
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-trainer  98ed10d52ef6
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CASO NEGATIVO — Simulación de ataque D-01 sobre RecoShop
+==============================================================
+
+[1/3] Entrenando y firmando un modelo íntegro (idéntico al caso positivo)...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
+[train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
+[train] MLflow run_id: 9fb47870246746c98811dcc96e4d7b9b
+[train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[sign_model] Firmando artefacto: /tmp/tmpq65pnsir/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpq65pnsir/model.txt.sig --tlog-upload=false --yes /tmp/tmpq65pnsir/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmpq65pnsir/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 30efe5e9563316367b16b499e9148a5288c269607a882c8ee301266db5f77ab1
+[sign_model] Firmando artefacto: /tmp/tmpq65pnsir/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpq65pnsir/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpq65pnsir/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmpq65pnsir/mlbom.cdx.json.sig
+Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
+2026/10/09 15:07:12 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 19
+Created version '19' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 19 (run_id=9fb47870246746c98811dcc96e4d7b9b).
+[train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
+[train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
+[train] Consulta el run en la UI de MLflow: http://mlflow:5000
+
+[2/3] Simulando el ataque: sustitución de bytes del modelo YA FIRMADO
+      directamente en el almacenamiento del Model Registry (MinIO)...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[tamper_model] Atacando la versión 19 de 'recoshop-ranker' en s3://mlflow-artifacts/1/9fb47870246746c98811dcc96e4d7b9b/artifacts/model/model.txt
+[tamper_model] Descargando artefacto original: s3://mlflow-artifacts/1/9fb47870246746c98811dcc96e4d7b9b/artifacts/model/model.txt
+[tamper_model] Tamaño original: 139738 bytes.
+[tamper_model] Artefacto SOBRESCRITO en el registry (139792 bytes).
+[tamper_model] NOTA: el archivo de firma (model.txt.sig) NO fue modificado, porque el atacante simulado no posee la clave privada de firma.
+[tamper_model] Simulación de ataque D-01 completada. Ejecuta ahora el deployment-gate para observar el rechazo.
+
+[3/3] Ejecutando el deployment-gate contra el modelo manipulado...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[deployment-gate] Evaluando la versión 19 de 'recoshop-ranker' (run_id=9fb47870246746c98811dcc96e4d7b9b) para despliegue.
+[deployment-gate] SHA-256 del modelo descargado:     08bb7e3f5e6e234238bd2bde71b7a6eb386ee51ca9d9c95a81f329113c924c66
+[deployment-gate] SHA-256 declarado en el ML-BOM:    a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmppoi29e83/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmppoi29e83/model/mlbom.cdx.json
+[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmppoi29e83/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmppoi29e83/model/model.txt
+[deployment-gate] stderr de cosign (modelo):
+WARNING: Skipping tlog verification is an insecure practice that lacks of transparency and auditability verification for the blob.
+Error: invalid signature when validating ASN.1 encoded signature
+main.go:74: error during command execution: invalid signature when validating ASN.1 encoded signature
+
+[deployment-gate] Controles de P-03:
+  ✅ C1  Firma del ML-BOM (documento de enlace auténtico)
+  ❌ C2  Vínculo ML-BOM ↔ modelo (hash declarado = hash descargado)
+  ❌ C3  Firma del modelo (artefacto auténtico)
+
+Despliegue RECHAZADO.
+
+
+✅ RESULTADO: el gate RECHAZÓ el modelo manipulado (comportamiento esperado).
+   Esto demuestra que el sub-componente Artifact Signing and Registry
+   Gate de P-03 detecta la sustitución maliciosa descrita en D-01.
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================

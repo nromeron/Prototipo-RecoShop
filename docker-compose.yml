@@ -185,7 +185,7 @@ services:
     networks:
       - recoshop-net
     # Sin puertos propios: se invoca con "docker compose run --rm inference-client
-    # python client_demo.py --case <valid|invalid-input|rate-limit|tampered-response>".
+    # python client_demo.py --case <valid|invalid-input|rate-limit|cross-hardening|tampered-response>".
 
   feedback-gate:
     build:

@@ -1,0 +1,108 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer2_demo.sh
+ Fecha (UTC):     2026-10-09T15:08:16Z
+ Commit:          2fa2a6d
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-trainer  98ed10d52ef6
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CAPA 2 — P-01 Secure Inference Gateway
+==============================================================
+
+[1/6] Claves cosign y Ed25519 verificadas.
+
+[2/6] Levantando infraestructura (MinIO + MLflow)...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+      Esperando a que mlflow esté healthy...
+      mlflow está healthy.
+
+[3/6] Registrando una versión fresca del modelo (Capa 1, sin modificarla)...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
+[train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
+[train] MLflow run_id: b2e69b71f6004dfe885850a8a9d798b4
+[train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[sign_model] Firmando artefacto: /tmp/tmp9dg27y3o/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp9dg27y3o/model.txt.sig --tlog-upload=false --yes /tmp/tmp9dg27y3o/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmp9dg27y3o/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 cea6985662adabee232fe97bc03ca90ac8077b3c0a039d704ff3e94e238b7925
+[sign_model] Firmando artefacto: /tmp/tmp9dg27y3o/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp9dg27y3o/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmp9dg27y3o/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmp9dg27y3o/mlbom.cdx.json.sig
+Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
+2026/10/09 15:08:29 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 22
+Created version '22' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 22 (run_id=b2e69b71f6004dfe885850a8a9d798b4).
+[train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
+[train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
+[train] Consulta el run en la UI de MLflow: http://mlflow:5000
+
+[4/6] Levantando inference-gateway y esperando su healthcheck...
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+ Container recoshop-mlflow  Waiting
+ Container recoshop-mlflow  Healthy
+ Container recoshop-inference-gateway  Starting
+ Container recoshop-inference-gateway  Started
+      inference-gateway está healthy.
+
+[5/6] Ejecutando los casos del cliente verificador (client_demo.py)...
+
+--- Caso: valid ---
+[client] respuesta válida, firma verificada, 5 recomendaciones sin scores crudos (D-02 / D-05 mitigadas).
+[client] CASO valid: OK
+
+--- Caso: invalid-input ---
+[client] entrada inválida correctamente rechazada con 422: {'error': 'input_validation_failed', 'details': ['price: in_range(0, 10000) (valor=-50.0)', 'product_popularity: in_range(0, 1) (valor=9.9)']}
+[client] CASO invalid-input: OK
+
+--- Caso: rate-limit ---
+[client] rate limiting activado correctamente (429 recibido dentro de 35 solicitudes).
+[client] CASO rate-limit: OK
+
+--- Caso: cross-hardening ---
+[client] endurecimiento cruzado verificado: cliente limpio con 5 recomendaciones; cliente sospechoso rechazado por el perfil de referencia y limitado a 3 recomendaciones.
+[client] CASO cross-hardening: OK
+
+--- Caso: tampered-response ---
+[client] la manipulación del payload fue detectada correctamente (firma inválida, D-05 mitigada).
+[client] CASO tampered-response: OK
+
+==============================================================
+ RESUMEN — Capa 2 (P-01 Secure Inference Gateway)
+==============================================================
+  ✅ valid: OK
+  ✅ invalid-input: OK
+  ✅ rate-limit: OK
+  ✅ cross-hardening: OK
+  ✅ tampered-response: OK
+
+✅ RESULTADO GLOBAL: los 5 casos de la Capa 2 dieron el resultado esperado.
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================

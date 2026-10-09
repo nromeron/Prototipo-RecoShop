@@ -12,6 +12,8 @@ __pycache__/
 
 # --- Salidas y logs locales ---
 *.log
+# Las bitácoras de evidencia sí se versionan (Anexo E de la tesis).
+!evidence/*.log
 
 # --- Residuos de Windows/WSL ---
 *Zone.Identifier

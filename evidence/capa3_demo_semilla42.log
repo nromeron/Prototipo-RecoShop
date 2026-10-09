@@ -1,0 +1,404 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer3_demo.sh
+ Fecha (UTC):     2026-10-09T15:09:52Z
+ Commit:          2fa2a6d
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-trainer  98ed10d52ef6
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CAPA 3 — P-02 Secure Retraining Gate
+==============================================================
+
+[1/5] Generando baseline y lotes sintéticos de feedback...
+      Limpiando cuarentena de corridas anteriores...
+[generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
+[generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
+[generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
+[generate_feedback] batch_adversarial.csv generado: 1000 filas -> /app/data/batch_adversarial.csv
+[generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
+
+[2/5] Evaluando los 3 lotes en orden clean -> natural -> adversarial...
+
+--- Evaluando batch_clean.csv (se espera exit 0) ---
+==============================================================================
+ RESUMEN — feedback_gate.py sobre batch_clean.csv
+==============================================================================
+
+[Guardian de Ingesta — Sub-componente 1] KS global por feature:
+  category                  stat=0.0338  p=0.2926
+  price                     stat=0.0288  p=0.4881
+  user_purchase_history     stat=0.0140  p=0.9963
+  product_popularity        stat=0.0190  p=0.9206
+  discount_pct              stat=0.0226  p=0.7824
+  is_weekend                stat=0.0310  p=0.3946
+  Features marcadas: 0 (umbral mínimo: 1) -> drift global detectado: False
+
+[Monitor de Drift de Seguridad — Sub-componente 2] KS por segmento (categoría):
+  Categorías con diferencia significativa: 0
+
+[Monitor de Drift de Seguridad] Índices de concentración:
+  Por categoría:  0.4516 (umbral: 0.6) — categoría top: 5
+  Temporal:       0.5714 (umbral: 0.85, span=2) — ventana top: 5
+
+[Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
+  Delta máximo: 0.0324 (umbral: 0.06) — categoría: 0
+
+[Decisión]
+  ACEPTADO (exit code 0)
+  Regla: El Guardian de Ingesta no detectó drift global significativo.
+==============================================================================
+✅ OK: batch_clean.csv se comportó como se esperaba (exit 0).
+
+--- Evaluando batch_natural_drift.csv (se espera exit 3) ---
+==============================================================================
+ RESUMEN — feedback_gate.py sobre batch_natural_drift.csv
+==============================================================================
+
+[Guardian de Ingesta — Sub-componente 1] KS global por feature:
+  category                  stat=0.0230  p=0.7641
+  price                     stat=0.0598  p=0.005012 <-- FLAGGED
+  user_purchase_history     stat=0.0108  p=1
+  product_popularity        stat=0.0846  p=1.255e-05 <-- FLAGGED
+  discount_pct              stat=0.0154  p=0.988
+  is_weekend                stat=0.0220  p=0.8091
+  Features marcadas: 2 (umbral mínimo: 1) -> drift global detectado: True
+
+[Monitor de Drift de Seguridad — Sub-componente 2] KS por segmento (categoría):
+  Categorías con diferencia significativa: 4
+
+[Monitor de Drift de Seguridad] Índices de concentración:
+  Por categoría:  0.3542 (umbral: 0.6) — categoría top: 7
+  Temporal:       0.4138 (umbral: 0.85, span=2) — ventana top: 5
+
+[Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
+  Delta máximo: 0.0310 (umbral: 0.06) — categoría: 4
+
+[Decisión]
+  ACEPTADO_CON_ALERTA (exit code 3)
+  Regla: El Guardian detectó drift global, pero el Monitor de Drift de Seguridad no encontró concentración por categoría/tiempo ni manipulación de etiquetas: el patrón es compatible con drift natural (difuso).
+==============================================================================
+
+✅ OK: batch_natural_drift.csv se comportó como se esperaba (exit 3).
+
+--- Evaluando batch_adversarial.csv (se espera exit 4) ---
+==============================================================================
+ RESUMEN — feedback_gate.py sobre batch_adversarial.csv
+==============================================================================
+
+[Guardian de Ingesta — Sub-componente 1] KS global por feature:
+  category                  stat=0.0956  p=4.545e-07 <-- FLAGGED
+  price                     stat=0.0236  p=0.736
+  user_purchase_history     stat=0.0402  p=0.1329
+  product_popularity        stat=0.0350  p=0.2551
+  discount_pct              stat=0.0166  p=0.9738
+  is_weekend                stat=0.0230  p=0.7641
+  Features marcadas: 1 (umbral mínimo: 1) -> drift global detectado: True
+
+[Monitor de Drift de Seguridad — Sub-componente 2] KS por segmento (categoría):
+  Categorías con diferencia significativa: 1
+
+[Monitor de Drift de Seguridad] Índices de concentración:
+  Por categoría:  1.0000 (umbral: 0.6) — categoría top: 3
+  Temporal:       0.5523 (umbral: 0.85, span=2) — ventana top: 4
+
+[Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
+  Delta máximo: 0.1149 (umbral: 0.06) — categoría: 3
+
+[Decisión]
+  CUARENTENA (exit code 4)
+  Regla: El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3
+==============================================================================
+[feedback_gate] Lote copiado a cuarentena: /app/data/quarantine/batch_adversarial.csv
+[feedback_gate] Evidencia de la decisión: /app/data/quarantine/batch_adversarial.csv.reason.json
+
+✅ OK: batch_adversarial.csv se comportó como se esperaba (exit 4).
+
+[3/5] Evidencia de cuarentena (reason.json del lote adversarial)...
+{
+  "batch_file": "batch_adversarial.csv",
+  "decision": "CUARENTENA",
+  "exit_code": 4,
+  "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
+  "quarantined_at_utc": "2026-10-09T15:10:12.328791+00:00",
+  "thresholds": {
+    "KS_ALPHA": 0.05,
+    "KS_STAT_THRESHOLD": 0.04,
+    "GUARDIAN_MIN_FLAGGED_FEATURES": 1,
+    "CONCENTRATION_CATEGORY_THRESHOLD": 0.6,
+    "CONCENTRATION_TEMPORAL_THRESHOLD": 0.85,
+    "TEMPORAL_CONCENTRATION_WINDOW_SPAN": 2,
+    "LABEL_MANIPULATION_DELTA_THRESHOLD": 0.06
+  },
+  "metrics": {
+    "guardian": {
+      "per_feature": {
+        "category": {
+          "statistic": 0.0956,
+          "p_value": 4.54491740234174e-07,
+          "flagged": true
+        },
+        "price": {
+          "statistic": 0.0236,
+          "p_value": 0.7360042098953127,
+          "flagged": false
+        },
+        "user_purchase_history": {
+          "statistic": 0.0402,
+          "p_value": 0.132857349060063,
+          "flagged": false
+        },
+        "product_popularity": {
+          "statistic": 0.035,
+          "p_value": 0.25511197580378225,
+          "flagged": false
+        },
+        "discount_pct": {
+          "statistic": 0.0166,
+          "p_value": 0.97384135130754,
+          "flagged": false
+        },
+        "is_weekend": {
+          "statistic": 0.023,
+          "p_value": 0.7641131562403735,
+          "flagged": false
+        }
+      },
+      "n_flagged": 1,
+      "global_drift_detected": true
+    },
+    "segment_ks": {
+      "per_category": {
+        "0": {
+          "n_batch_rows": 92,
+          "features": {
+            "price": {
+              "statistic": 0.10695373467112597,
+              "p_value": 0.29457153955075166,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.0988015607580825,
+              "p_value": 0.38639400106662436,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "1": {
+          "n_batch_rows": 80,
+          "features": {
+            "price": {
+              "statistic": 0.10607476635514018,
+              "p_value": 0.37111852722862404,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.09949376947040499,
+              "p_value": 0.4491072093739089,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "2": {
+          "n_batch_rows": 111,
+          "features": {
+            "price": {
+              "statistic": 0.07151170309065046,
+              "p_value": 0.6895899523660752,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.09539204276046381,
+              "p_value": 0.33343834501716957,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "3": {
+          "n_batch_rows": 315,
+          "features": {
+            "price": {
+              "statistic": 0.06492237920809349,
+              "p_value": 0.3189867925380308,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.10186638758067329,
+              "p_value": 0.023028456372258605,
+              "flagged": true
+            }
+          },
+          "flagged": true
+        },
+        "4": {
+          "n_batch_rows": 110,
+          "features": {
+            "price": {
+              "statistic": 0.07867528271405493,
+              "p_value": 0.5784455247469559,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.08618005580848877,
+              "p_value": 0.46250763577519544,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "5": {
+          "n_batch_rows": 103,
+          "features": {
+            "price": {
+              "statistic": 0.09032268735217744,
+              "p_value": 0.44308220823329175,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.0801673806255272,
+              "p_value": 0.5939478852804202,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "6": {
+          "n_batch_rows": 94,
+          "features": {
+            "price": {
+              "statistic": 0.06436170212765957,
+              "p_value": 0.8616177788547952,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.0756316489361702,
+              "p_value": 0.7042569590067441,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        },
+        "7": {
+          "n_batch_rows": 95,
+          "features": {
+            "price": {
+              "statistic": 0.11788124156545209,
+              "p_value": 0.18509823879012102,
+              "flagged": false
+            },
+            "product_popularity": {
+              "statistic": 0.13547570850202428,
+              "p_value": 0.087417741744619,
+              "flagged": false
+            }
+          },
+          "flagged": false
+        }
+      },
+      "n_significant_categories": 1
+    },
+    "concentration_category": {
+      "concentration": 1.0,
+      "top_group": 3,
+      "excess_by_group": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 190.0,
+        "4": 0.0,
+        "5": 0.0,
+        "6": 0.0,
+        "7": 0.0
+      },
+      "concentration_metric": "category"
+    },
+    "concentration_temporal": {
+      "concentration": 0.5523465703971119,
+      "top_group": 4,
+      "excess_by_group": {
+        "0": 0.0,
+        "1": 0.0,
+        "2": 0.0,
+        "3": 51.0,
+        "4": 153.0,
+        "5": 73.0,
+        "6": 0.0,
+        "7": 0.0,
+        "8": 0.0
+      },
+      "concentration_metric": "temporal",
+      "window_span": 2
+    },
+    "label_manipulation": {
+      "per_category": {
+        "0": {
+          "baseline_top_share": 0.038461538461538464,
+          "batch_top_share": 0.06521739130434782,
+          "delta": 0.02675585284280936
+        },
+        "1": {
+          "baseline_top_share": 0.0529595015576324,
+          "batch_top_share": 0.025,
+          "delta": -0.027959501557632396
+        },
+        "2": {
+          "baseline_top_share": 0.04784688995215311,
+          "batch_top_share": 0.036036036036036036,
+          "delta": -0.011810853916117074
+        },
+        "3": {
+          "baseline_top_share": 0.0565149136577708,
+          "batch_top_share": 0.17142857142857143,
+          "delta": 0.11491365777080062
+        },
+        "4": {
+          "baseline_top_share": 0.050080775444264945,
+          "batch_top_share": 0.07272727272727272,
+          "delta": 0.02264649728300778
+        },
+        "5": {
+          "baseline_top_share": 0.049403747870528106,
+          "batch_top_share": 0.05825242718446602,
+          "delta": 0.008848679313937916
+        },
+        "6": {
+          "baseline_top_share": 0.0578125,
+          "batch_top_share": 0.02127659574468085,
+          "delta": -0.03653590425531915
+        },
+        "7": {
+          "baseline_top_share": 0.046474358974358976,
+          "batch_top_share": 0.06315789473684211,
+          "delta": 0.01668353576248313
+        }
+      },
+      "max_delta": 0.11491365777080062,
+      "top_category": 3
+    }
+  }
+}
+[4/5] Resumen de resultados:
+  ✅ batch_clean.csv: exit 0 (esperado: 0)
+  ✅ batch_natural_drift.csv: exit 3 (esperado: 3)
+  ✅ batch_adversarial.csv: exit 4 (esperado: 4)
+
+[5/5] ==============================================================
+ ✅ RESULTADO GLOBAL: el Secure Retraining Gate distinguió correctamente
+    los tres escenarios (clean/natural/adversarial) de forma determinista.
+==============================================================
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================
