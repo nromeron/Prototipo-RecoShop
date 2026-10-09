@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-6%2F6_demos_·_18%2F18_veredictos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-8%2F8_demos_·_18%2F18_veredictos-2EA043)
 
 </div>
 
@@ -106,7 +106,7 @@ flowchart TB
 
     TRAINER -- "registra modelo + ML-BOM firmados" --> MLFLOW
     GATE -- "verifica antes de aprobar" --> MLFLOW
-    GW -- "verifica la firma al arrancar" --> MLFLOW
+    GW -- "verifica firma y ML-BOM al arrancar" --> MLFLOW
     CLIENT -- "POST /v1/recommend" --> GW
     KEYS -.-> TRAINER
     KEYS -.-> GATE
@@ -190,16 +190,33 @@ Un gateway **FastAPI** con tres sub-componentes coordinados:
 - **Response Signer** — firma cada respuesta con **Ed25519** sobre su JSON
   canónico, para que el cliente detecte cualquier manipulación en tránsito.
 
-El gateway es *fail-closed*: al arrancar descarga el modelo del registry y
-**verifica su firma con cosign antes de servir**. Si la verificación falla,
-el proceso termina. Nunca sirve un modelo no verificado: es la integración
-P-03 → P-01, defensa en profundidad entre patrones.
+Los tres sub-componentes **comparten un registro de sospecha por cliente**
+(endurecimiento cruzado). Cada entrada rechazada suma 0.3 y cada exceso de
+tasa 0.6, con decaimiento de vida media de 10 minutos; desde 0.5 el cliente
+queda en modo endurecido:
+
+- el **Input Validator** le aplica además el perfil de referencia del
+  entrenamiento (por ejemplo, `price` en (0, 500]), y rechaza valores
+  plausibles para el dominio pero ajenos a lo que el modelo conoce;
+- el **Output Controller** le entrega **3 recomendaciones en lugar de 5**.
+
+Un error aislado no basta: un cliente legítimo que se equivoca una vez no se
+ve afectado.
+
+El gateway es *fail-closed*: al arrancar descarga del registry el modelo, el
+ML-BOM y sus firmas, y antes de servir verifica **la firma del ML-BOM, el
+vínculo entre el ML-BOM y el modelo, y la firma del modelo**, los mismos tres
+controles del `deployment-gate`. Si alguno falla, el proceso termina. Ante la
+sustitución firmada de la Capa 1, el gateway se niega a arrancar: la firma
+del modelo es válida, pero no es el modelo que declara el ML-BOM. Es la
+integración P-03 → P-01, defensa en profundidad entre patrones.
 
 | Caso del cliente verificador | Resultado |
 |---|---|
 | `valid` | 200 · firma verificada · 5 recomendaciones sin scores |
 | `invalid-input` | 422 · `price: in_range(0, 10000) (valor=-50.0)` · `product_popularity: in_range(0, 1) (valor=9.9)` |
 | `rate-limit` | 429 dentro de la ráfaga |
+| `cross-hardening` | cliente limpio: precio 5000 → 200 con 5 recomendaciones · cliente con 2 rechazos: precio 5000 → 422 (perfil de referencia) y solicitud normal → 200 con 3 recomendaciones firmadas |
 | `tampered-response` | payload alterado → firma inválida, detectado |
 
 ### Capa 3 · P-02 Secure Retraining Gate
@@ -250,16 +267,21 @@ amplitudes de drift natural calibradas (precio +9 %, popularidad +0.06), los
 | 777 | 0 | 3 | 4 |
 | 2026 | 0 | 3 | 4 |
 
-Ese umbral es también el **límite de validez documentado** del detector: por
-debajo de esas amplitudes, la alerta de drift natural deja de estar
-garantizada. La detección adversarial no se ve afectada.
+**Frontera:** las amplitudes son configurables
+(`NATURAL_DRIFT_PRICE_PCT`, `NATURAL_DRIFT_POPULARITY_DELTA`). Con las
+amplitudes anteriores (precio +5 %, popularidad +0.03), la alerta por drift
+natural aparece en **3 de 6 semillas** (7, 42 y 101); en las otras tres el
+cambio no supera el Guardián y el lote se acepta sin alerta. Los lotes
+limpios se aceptan y los adversariales van a cuarentena **en las seis**: la
+amplitud mueve la sensibilidad a la deriva natural, no la detección del
+ataque.
 
 ---
 
 ## Evidencia reproducible
 
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
-las seis demostraciones y guarda cada salida en [`evidence/`](evidence/) con
+las ocho demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
 identificadores de imagen), un resumen y un manifiesto SHA-256:
 
@@ -272,9 +294,11 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 | Capa 1 · caso positivo | ✅ aprobado |
 | Capa 1 · bytes alterados | ✅ rechazado |
 | Capa 1 · sustitución firmada | ✅ rechazado |
-| Capa 2 · 4 casos del cliente | ✅ 4/4 |
+| Capa 2 · 5 casos del cliente | ✅ 5/5 |
+| Capa 2 · arranque ante sustitución firmada | ✅ el gateway no arranca |
 | Capa 3 · demo con semilla 42 | ✅ 0 / 3 / 4 |
 | Capa 3 · sensibilidad | ✅ 18/18 |
+| Capa 3 · frontera (+5 %, +0.03) | ✅ alerta natural 3/6 · limpio y adversarial 6/6 |
 
 El pipeline es determinista: con la misma semilla, el dataset y el modelo
 producen el mismo hash en cada entrenamiento
@@ -303,10 +327,12 @@ chmod +x scripts/*.sh
 
 # Capa 2 · P-01
 ./scripts/run_layer2_demo.sh
+./scripts/run_layer2_swap_signed_startup.sh
 
 # Capa 3 · P-02
 ./scripts/run_layer3_demo.sh
 ./scripts/run_layer3_seeds.sh
+./scripts/run_layer3_seeds_low_amplitude.sh
 
 # O todo junto, con evidencia
 ./scripts/capture_evidence.sh
@@ -339,8 +365,8 @@ entorno, y los scripts lo reportan por separado.
     ├── mlflow/                  Tracking + Model Registry
     ├── trainer/                 entrenamiento, firma, ML-BOM y simulación de ataques
     ├── deployment-gate/         controles C1–C3 antes de aprobar un despliegue
-    ├── inference-gateway/       P-01: validador, controlador de salida y firmante
-    ├── inference-client/        cliente verificador con los 4 casos
+    ├── inference-gateway/       P-01: validador, controlador de salida, firmante y registro de sospecha
+    ├── inference-client/        cliente verificador con los 5 casos
     └── feedback-gate/           P-02: Guardián, Monitor y cuarentena
 ```
 
@@ -351,7 +377,11 @@ entorno, y los scripts lo reportan por separado.
 - **Evaluar y reportar todos los controles**, aunque uno ya haya fallado. La
   evidencia muestra qué control detectó cada ataque, y eso es lo que permite
   demostrar que C2 aporta algo que C3 no.
-- **Fail-closed en el gateway.** Si no puede verificar el modelo, no arranca.
+- **Fail-closed en el gateway.** Si no puede verificar el modelo y su
+  vínculo con el ML-BOM, no arranca.
+- **Endurecimiento cruzado con decaimiento.** La sospecha se acumula por
+  cliente y decae con el tiempo: degrada la respuesta ante un patrón
+  sostenido, no ante un error aislado.
 - **ML-BOM construido sobre el esquema oficial.** `cyclonedx-python-lib` aún
   no serializa los campos `modelCard` ni `data`; el documento se construye
   directamente y valida sin errores contra el JSON Schema de CycloneDX 1.7.
@@ -365,8 +395,8 @@ entorno, y los scripts lo reportan por separado.
 Es una **demostración de viabilidad en laboratorio**, no un sistema de
 producción:
 
-- Datos sintéticos, umbrales calibrados sobre ellos y un único stack
-  tecnológico.
+- Datos sintéticos, amplitudes de drift natural calibradas en el generador
+  y un único stack tecnológico.
 - Sin adversario adaptativo. Un envenenamiento lento y distribuido
   (*low-and-slow*) queda fuera del alcance de un detector por lote.
 - Firma con claves locales y **sin registro de transparencia** (Rekor). En

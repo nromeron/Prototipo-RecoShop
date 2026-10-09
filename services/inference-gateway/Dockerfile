@@ -26,6 +26,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py input_validator.py output_controller.py response_signer.py ./
+COPY app.py input_validator.py output_controller.py response_signer.py suspicion.py ./
 
 CMD ["python", "app.py"]

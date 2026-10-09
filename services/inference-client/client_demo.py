@@ -13,6 +13,13 @@ los tres sub-componentes de P-01:
                           (Input Validator, mitigación de D-04).
   - rate-limit          : ráfaga de solicitudes -> al menos un 429
                           (Output Controller, rate limiting).
+  - cross-hardening     : endurecimiento cruzado. Un cliente con dos
+                          entradas rechazadas pasa a modo endurecido: una
+                          solicitud con un precio plausible para el dominio
+                          pero fuera del perfil de entrenamiento se rechaza
+                          (422) y una solicitud normal recibe menos
+                          recomendaciones (3 en lugar de 5). Un cliente
+                          limpio no se ve afectado.
   - tampered-response   : se altera un byte del payload firmado ANTES de
                           verificar -> la verificación Ed25519 debe
                           FALLAR (simulación de manipulación en tránsito,
@@ -147,6 +154,63 @@ def case_rate_limit() -> bool:
     return True
 
 
+def case_cross_hardening() -> bool:
+    """
+    Endurecimiento cruzado de P-01: lo que el Validador de Entrada observa
+    sobre un cliente endurece al propio Validador y al Controlador de
+    Información de Salida para ese cliente, y solo para él.
+    """
+    public_key = _load_public_key()
+    url = f"{GATEWAY_URL}/v1/recommend"
+
+    def borderline_session():
+        session = _sample_session()
+        session[0]["price"] = 5000.0  # admisible por el dominio, fuera del perfil de entrenamiento
+        return session
+
+    def invalid_session():
+        session = _sample_session()
+        session[0]["price"] = -50
+        return session
+
+    # 1) Cliente limpio: la sesión con precio 5000 se acepta en modo normal.
+    clean = requests.post(url, json={"client_id": "demo-client-clean", "session": borderline_session()}, timeout=10)
+    if clean.status_code != 200 or len(clean.json()["payload"]["recommendations"]) != 5:
+        print(f"[client] el cliente limpio debía recibir 200 con 5 recomendaciones; recibió {clean.status_code}.")
+        return False
+
+    # 2) Cliente sospechoso: dos entradas rechazadas elevan su puntuación.
+    suspect = "demo-client-suspect"
+    for _ in range(2):
+        r = requests.post(url, json={"client_id": suspect, "session": invalid_session()}, timeout=10)
+        if r.status_code != 422:
+            print(f"[client] se esperaba 422 por entrada inválida, se recibió {r.status_code}.")
+            return False
+
+    # 3) Ahora la misma sesión con precio 5000 se rechaza por el perfil de referencia.
+    r = requests.post(url, json={"client_id": suspect, "session": borderline_session()}, timeout=10)
+    if r.status_code != 422 or not any("perfil de referencia" in str(d) for d in r.json().get("details", [])):
+        print(f"[client] en modo endurecido se esperaba 422 por perfil de referencia; se recibió {r.status_code}: {r.text}")
+        return False
+
+    # 4) Una solicitud normal se sirve, firmada, pero con menos recomendaciones.
+    r = requests.post(url, json={"client_id": suspect, "session": _sample_session()}, timeout=10)
+    if r.status_code != 200:
+        print(f"[client] la solicitud normal del cliente sospechoso debía servirse; se recibió {r.status_code}.")
+        return False
+    body = r.json()
+    n_recs = len(body["payload"]["recommendations"])
+    if n_recs != 3 or not _verify_signature(body, public_key):
+        print(f"[client] se esperaban 3 recomendaciones con firma válida; se recibieron {n_recs}.")
+        return False
+
+    print(
+        "[client] endurecimiento cruzado verificado: cliente limpio con 5 recomendaciones; "
+        "cliente sospechoso rechazado por el perfil de referencia y limitado a 3 recomendaciones."
+    )
+    return True
+
+
 def case_tampered_response() -> bool:
     public_key = _load_public_key()
     payload = {"client_id": "demo-client-tampered", "session": _sample_session()}
@@ -180,6 +244,7 @@ CASES = {
     "valid": case_valid,
     "invalid-input": case_invalid_input,
     "rate-limit": case_rate_limit,
+    "cross-hardening": case_cross_hardening,
     "tampered-response": case_tampered_response,
 }
 

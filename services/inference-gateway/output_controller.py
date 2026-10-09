@@ -79,7 +79,7 @@ class OutputController:
 
         bucket.tokens -= 1.0
 
-    def build_response(self, product_ids: Sequence[int], scores: Sequence[float]) -> List[dict]:
+    def build_response(self, product_ids: Sequence[int], scores: Sequence[float], top_k: int = None) -> List[dict]:
         """
         Ordena los candidatos por score descendente y retorna únicamente
         product_id y rank para los primeros self.top_k -- los scores
@@ -87,7 +87,9 @@ class OutputController:
         Information Limiting, P-01 candidato A3, mitigación de D-02).
         """
         order = sorted(range(len(product_ids)), key=lambda i: scores[i], reverse=True)
-        top_indices = order[: self.top_k]
+        # top_k explícito: lo usa la pasarela para reducir la información
+        # entregada a un cliente marcado como sospechoso.
+        top_indices = order[: (top_k if top_k is not None else self.top_k)]
         return [
             {"product_id": product_ids[i], "rank": rank}
             for rank, i in enumerate(top_indices, start=1)

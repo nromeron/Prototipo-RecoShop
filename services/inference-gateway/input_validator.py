@@ -56,6 +56,20 @@ CANDIDATE_SCHEMA = DataFrameSchema(
     strict=False,
 )
 
+# Perfil de referencia de entrenamiento (modo endurecido). Rangos plausibles
+# observados en los datos con que se entrena el modelo, más estrechos que los
+# rangos admisibles por el dominio. Se aplica, además del esquema anterior,
+# solo a los clientes marcados como sospechosos por el registro de sospecha
+# compartido (endurecimiento cruzado de P-01).
+STRICT_PROFILE_SCHEMA = DataFrameSchema(
+    {
+        "price": Column(float, Check.in_range(0, 500, include_min=False), nullable=False),
+        "user_purchase_history": Column(int, Check.in_range(0, 20), nullable=False),
+        "discount_pct": Column(float, Check.in_range(0, 0.5), nullable=False),
+    },
+    strict=False,
+)
+
 
 class InputValidationError(Exception):
     """Se lanza cuando la solicitud no supera el Input Validator de P-01."""
@@ -65,7 +79,7 @@ class InputValidationError(Exception):
         super().__init__("Validación de entrada fallida (Input Validator, P-01 / D-04)")
 
 
-def validate_candidates(candidates: List[dict]) -> pd.DataFrame:
+def validate_candidates(candidates: List[dict], strict: bool = False) -> pd.DataFrame:
     """
     Valida la lista de candidatos de una sesión contra el contrato
     estructural y de rangos de P-01. Retorna el DataFrame validado si todo
@@ -103,5 +117,17 @@ def validate_candidates(candidates: List[dict]) -> pd.DataFrame:
         for _, row in exc.failure_cases.iterrows():
             details.append(f"{row['column']}: {row['check']} (valor={row['failure_case']})")
         raise InputValidationError(details) from exc
+
+    # Modo endurecido: el cliente ya fue marcado como sospechoso, así que
+    # además se exige el perfil de referencia de entrenamiento.
+    if strict:
+        try:
+            STRICT_PROFILE_SCHEMA.validate(validated, lazy=True)
+        except pa.errors.SchemaErrors as exc:
+            for _, row in exc.failure_cases.iterrows():
+                details.append(
+                    f"{row['column']}: {row['check']} [perfil de referencia] (valor={row['failure_case']})"
+                )
+            raise InputValidationError(details) from exc
 
     return validated

@@ -62,6 +62,10 @@ import numpy as np
 import pandas as pd
 
 RANDOM_SEED = int(os.environ.get("RANDOM_SEED", "42"))
+# Amplitud de la deriva natural (calibrada en +9 % y +0,06). Configurable para
+# documentar la frontera del detector (run_layer3_seeds_low_amplitude.sh).
+NATURAL_DRIFT_PRICE_PCT = float(os.environ.get("NATURAL_DRIFT_PRICE_PCT", "0.09"))
+NATURAL_DRIFT_POPULARITY_DELTA = float(os.environ.get("NATURAL_DRIFT_POPULARITY_DELTA", "0.06"))
 N_CATEGORIES = 8
 N_TIME_WINDOWS = 10  # ventanas 0..9
 
@@ -153,9 +157,9 @@ def generate_batch_natural_drift(rng: np.random.Generator, product_id_offset: in
     # Factor de crecimiento suave 0.0 (time_window=0) .. 1.0 (time_window=9),
     # aplicado UNIFORMEMENTE a todas las categorías (drift difuso).
     growth_factor = time_window / (N_TIME_WINDOWS - 1)
-    df["price"] = df["price"] * (1.0 + 0.09 * growth_factor)
+    df["price"] = df["price"] * (1.0 + NATURAL_DRIFT_PRICE_PCT * growth_factor)
     df["product_popularity"] = np.clip(
-        df["product_popularity"] + 0.06 * growth_factor, 0.0, 1.0
+        df["product_popularity"] + NATURAL_DRIFT_POPULARITY_DELTA * growth_factor, 0.0, 1.0
     )
 
     df["product_id"] = np.arange(product_id_offset, product_id_offset + BATCH_ROWS)

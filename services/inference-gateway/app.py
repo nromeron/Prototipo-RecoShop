@@ -21,10 +21,23 @@ modelo no verificado. Esta verificación ocurre a nivel de módulo (no
 dentro de un handler de FastAPI), de modo que corre exactamente una vez,
 antes de que uvicorn empiece a aceptar conexiones.
 
+Además de la firma del modelo, verifica su ML-BOM firmado (documento de
+enlace de P-03): la firma del ML-BOM y que el resumen criptográfico del
+modelo descargado coincida con el que el ML-BOM declara. Así la pasarela
+rechaza también la sustitución por un modelo legítimamente firmado de otra
+versión, igual que la compuerta de despliegue.
+
+ENDURECIMIENTO CRUZADO: los sub-componentes comparten un registro de
+sospecha por cliente (suspicion.py). Los rechazos del Validador y los
+excesos de tasa del Controlador elevan la puntuación del cliente; por
+encima del umbral, el Validador aplica el perfil de referencia de
+entrenamiento y el Controlador reduce el número de recomendaciones.
+
 Relación con la tesis: A4.4 §3.1 (Cambios concretos por patrón, P-01) y
 §4.1 (Análisis de impacto en seguridad). Mitigación de D-02, D-04 y D-05.
 """
 
+import json
 import logging
 import os
 import shutil
@@ -44,6 +57,7 @@ from pydantic import BaseModel
 from input_validator import InputValidationError, validate_candidates
 from output_controller import OutputController, RateLimitExceeded
 from response_signer import ResponseSigner
+from suspicion import SuspicionRegistry
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("inference-gateway")
@@ -53,6 +67,9 @@ COSIGN_PUB_PATH = os.environ.get("COSIGN_PUB_PATH", "/keys/cosign.pub")
 RESPONSE_SIGNING_KEY_PATH = os.environ.get("RESPONSE_SIGNING_KEY_PATH", "/keys/response_ed25519.key")
 TOP_K = int(os.environ.get("TOP_K", "5"))
 RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
+SUSPICION_THRESHOLD = float(os.environ.get("SUSPICION_THRESHOLD", "0.5"))
+SUSPICION_HALF_LIFE_SECONDS = float(os.environ.get("SUSPICION_HALF_LIFE_SECONDS", "600"))
+RESTRICTED_TOP_K = int(os.environ.get("RESTRICTED_TOP_K", "3"))
 
 FEATURE_COLUMNS = [
     "category",
@@ -92,6 +109,36 @@ def _sha256_of_file(path: str) -> str:
     return h.hexdigest()
 
 
+def _cosign_verify(blob_path: str, sig_path: str) -> subprocess.CompletedProcess:
+    cmd = [
+        "cosign", "verify-blob",
+        "--key", COSIGN_PUB_PATH,
+        "--signature", sig_path,
+        "--insecure-ignore-tlog=true",
+        blob_path,
+    ]
+    logger.info(f"[inference-gateway] Verificando firma: {' '.join(cmd)}")
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def _model_hash_declared_in_mlbom(mlbom_path: str):
+    """SHA-256 del único componente machine-learning-model del ML-BOM, o None."""
+    try:
+        with open(mlbom_path, encoding="utf-8") as f:
+            bom = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    if bom.get("bomFormat") != "CycloneDX":
+        return None
+    models = [c for c in bom.get("components", []) if c.get("type") == "machine-learning-model"]
+    if len(models) != 1:
+        return None
+    for h in models[0].get("hashes", []):
+        if h.get("alg") == "SHA-256":
+            return h.get("content")
+    return None
+
+
 def load_and_verify_model() -> lgb.Booster:
     """
     Descarga la última versión registrada de MLFLOW_MODEL_NAME desde
@@ -123,6 +170,19 @@ def load_and_verify_model() -> lgb.Booster:
         sig_path = mlflow.artifacts.download_artifacts(
             run_id=latest.run_id, artifact_path="model/model.txt.sig", dst_path=tmp_dir
         )
+        try:
+            mlbom_path = mlflow.artifacts.download_artifacts(
+                run_id=latest.run_id, artifact_path="model/mlbom.cdx.json", dst_path=tmp_dir
+            )
+            mlbom_sig_path = mlflow.artifacts.download_artifacts(
+                run_id=latest.run_id, artifact_path="model/mlbom.cdx.json.sig", dst_path=tmp_dir
+            )
+        except Exception as exc:  # noqa: BLE001 - política de falla segura
+            logger.critical(
+                "[inference-gateway] ERROR CRÍTICO: la versión no tiene ML-BOM firmado "
+                f"(política de P-03). El gateway no la sirve. Detalle: {exc}"
+            )
+            sys.exit(1)
 
         if shutil.which("cosign") is None:
             logger.critical(
@@ -139,19 +199,29 @@ def load_and_verify_model() -> lgb.Booster:
             )
             sys.exit(1)
 
-        logger.info(
-            f"[inference-gateway] SHA-256 del artefacto descargado: {_sha256_of_file(model_path)}"
-        )
+        current_hash = _sha256_of_file(model_path)
+        declared_hash = _model_hash_declared_in_mlbom(mlbom_path)
+        logger.info(f"[inference-gateway] SHA-256 del artefacto descargado: {current_hash}")
+        logger.info(f"[inference-gateway] SHA-256 declarado en el ML-BOM:   {declared_hash}")
 
-        cmd = [
-            "cosign", "verify-blob",
-            "--key", COSIGN_PUB_PATH,
-            "--signature", sig_path,
-            "--insecure-ignore-tlog=true",
-            model_path,
-        ]
-        logger.info(f"[inference-gateway] Verificando firma del modelo: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        mlbom_check = _cosign_verify(mlbom_path, mlbom_sig_path)
+        if mlbom_check.returncode != 0:
+            logger.critical(
+                "[inference-gateway] ERROR CRÍTICO: FIRMA DEL ML-BOM INVÁLIDA. "
+                "El gateway nunca sirve un modelo sin documento de enlace auténtico."
+            )
+            logger.critical(f"[inference-gateway] stderr de cosign: {mlbom_check.stderr.strip()}")
+            sys.exit(1)
+
+        if declared_hash is None or declared_hash != current_hash:
+            logger.critical(
+                "[inference-gateway] ERROR CRÍTICO: el modelo descargado no es el que "
+                "declara el ML-BOM de esta versión (posible sustitución por un modelo "
+                "firmado de otra versión). El gateway no lo sirve."
+            )
+            sys.exit(1)
+
+        result = _cosign_verify(model_path, sig_path)
 
         if result.returncode != 0:
             logger.critical(
@@ -162,7 +232,9 @@ def load_and_verify_model() -> lgb.Booster:
             logger.critical(f"[inference-gateway] stderr de cosign: {result.stderr.strip()}")
             sys.exit(1)
 
-        logger.info("[inference-gateway] Firma verificada correctamente. Cargando modelo...")
+        logger.info(
+            "[inference-gateway] ML-BOM, vínculo y firma del modelo verificados. Cargando modelo..."
+        )
         booster = lgb.Booster(model_file=model_path)
 
     logger.info("[inference-gateway] Modelo cargado y listo para servir.")
@@ -174,6 +246,7 @@ def load_and_verify_model() -> lgb.Booster:
 _model = load_and_verify_model()
 _output_controller = OutputController(top_k=TOP_K, rate_limit_per_minute=RATE_LIMIT_PER_MINUTE)
 _response_signer = ResponseSigner(RESPONSE_SIGNING_KEY_PATH)
+_suspicion = SuspicionRegistry(threshold=SUSPICION_THRESHOLD, half_life_seconds=SUSPICION_HALF_LIFE_SECONDS)
 
 app = FastAPI(title="RecoShop Secure Inference Gateway (P-01, Capa 2)")
 
@@ -204,16 +277,28 @@ async def recommend(payload: RecommendRequest):
     try:
         _output_controller.check_rate_limit(client_id)
     except RateLimitExceeded:
-        logger.warning(f"[inference-gateway] Rate limit excedido para client_id={client_id}")
+        score = _suspicion.record(client_id, "rate_limit")
+        logger.warning(
+            f"[inference-gateway] Rate limit excedido para client_id={client_id} "
+            f"(sospecha={score:.2f})"
+        )
         return JSONResponse(status_code=429, content={"error": "rate_limit_exceeded"})
+
+    # Endurecimiento cruzado: el estado de sospecha del cliente, alimentado
+    # por el Validador y el Controlador, decide el modo de esta solicitud.
+    hardened = _suspicion.is_suspicious(client_id)
+    if hardened:
+        logger.warning(f"[inference-gateway] Modo endurecido para client_id={client_id}")
 
     # 2) Input Validator (mitigación de D-04)
     candidates = [c.model_dump() for c in payload.session]
     try:
-        validated_df = validate_candidates(candidates)
+        validated_df = validate_candidates(candidates, strict=hardened)
     except InputValidationError as exc:
+        score = _suspicion.record(client_id, "validation_failure")
         logger.warning(
-            f"[inference-gateway] Solicitud rechazada por el Input Validator: {exc.details}"
+            f"[inference-gateway] Solicitud rechazada por el Input Validator "
+            f"(sospecha={score:.2f}): {exc.details}"
         )
         return JSONResponse(
             status_code=422,
@@ -225,7 +310,9 @@ async def recommend(payload: RecommendRequest):
     product_ids = validated_df["product_id"].tolist()
 
     # 4) Output Controller: top-k limiting, sin scores crudos (D-02)
-    recommendations = _output_controller.build_response(product_ids, scores)
+    recommendations = _output_controller.build_response(
+        product_ids, scores, top_k=RESTRICTED_TOP_K if hardened else None
+    )
 
     # 5) Response Signer: firma Ed25519 de la respuesta (D-05)
     signed_body = _response_signer.sign_payload(

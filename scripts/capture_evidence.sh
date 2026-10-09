@@ -29,9 +29,11 @@ DEMOS=(
   "capa1_caso_positivo|run_layer1_positive_case.sh"
   "capa1_caso_negativo_append|run_layer1_negative_case.sh"
   "capa1_caso_negativo_swap_signed|run_layer1_swap_signed_case.sh"
-  "capa2_demo_4casos|run_layer2_demo.sh"
+  "capa2_demo_5casos|run_layer2_demo.sh"
+  "capa2_arranque_sustitucion_firmada|run_layer2_swap_signed_startup.sh"
   "capa3_demo_semilla42|run_layer3_demo.sh"
   "capa3_sensibilidad_6semillas|run_layer3_seeds.sh"
+  "capa3_sensibilidad_amplitud_baja|run_layer3_seeds_low_amplitude.sh"
 )
 
 # --- Procedencia común a todos los logs ---
