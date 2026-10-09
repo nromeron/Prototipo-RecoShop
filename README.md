@@ -301,8 +301,8 @@ semillas propias, independientes del corpus, versionado por su SHA-256):
 
 En la retroalimentación envenenada, una red de bots simula compras de los
 productos **menos** populares de la categoría 3 en el 60 % de las sesiones. El
-candidato resultante conserva el NDCG@10 global (caída de 0.004) pero ordena
-peor la categoría 3 (caída de 0.074 en exactitud por pares), mientras las
+candidato resultante conserva el NDCG@10 global (caída de 0.0035) pero ordena
+peor la categoría 3 (caída de 0.075 en exactitud por pares), mientras las
 otras siete categorías se mueven menos de 0.016.
 
 | Retroalimentación | Señal del Monitor | Decisión |
@@ -316,9 +316,9 @@ Un candidato retenido o rechazado no se promueve: el modelo vigente sigue en
 producción, y cada decisión deja un registro de auditoría en JSON con los
 umbrales, los resúmenes de ambos modelos y del conjunto canónico, y los deltas
 por categoría. Con seis semillas de la retroalimentación, los **12
-veredictos** coinciden con lo esperado: la caída en la categoría 3 va de 0.060
-a 0.087 con la retroalimentación envenenada, y ninguna categoría cae más de
-0.011 con la limpia.
+veredictos** coinciden con lo esperado: la caída en la categoría 3 va de 0.055
+a 0.081 con la retroalimentación envenenada, y con la limpia esa categoría
+varía entre −0.003 y +0.015.
 
 ---
 
