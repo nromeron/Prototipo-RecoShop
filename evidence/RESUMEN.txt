@@ -1,4 +1,4 @@
-Captura de evidencia — 2026-10-09T15:15:36Z — commit 2fa2a6d
+Captura de evidencia — 2026-10-09T16:50:12Z — commit 6476019
 
 ✅  capa1_caso_positivo                  exit 0
 ✅  capa1_caso_negativo_append           exit 0
@@ -8,3 +8,5 @@ Captura de evidencia — 2026-10-09T15:15:36Z — commit 2fa2a6d
 ✅  capa3_demo_semilla42                 exit 0
 ✅  capa3_sensibilidad_6semillas         exit 0
 ✅  capa3_sensibilidad_amplitud_baja     exit 0
+✅  capa3_compuerta_promocion            exit 0
+✅  capa3_compuerta_promocion_6semillas  exit 0

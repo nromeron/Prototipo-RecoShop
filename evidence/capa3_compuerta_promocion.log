@@ -1,0 +1,316 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer3_promotion_demo.sh
+ Fecha (UTC):     2026-10-09T16:45:24Z
+ Commit:          6476019
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-trainer  55746d750784
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CAPA 3 — P-02 Compuerta de Promoción del Modelo Reentrenado
+==============================================================
+
+[1/4] Retroalimentación: clean · señal del Monitor: none (se espera exit 0)
+[promotion-gate] Escenario de retroalimentación: clean (semilla 500); señal del Monitor: none
+[promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
+[promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
+
+[promotion-gate] NDCG@10 global en el conjunto canónico:
+  vigente 0.8737 · candidato 0.8788 · delta +0.0051 (tolerancia 0.02)
+[promotion-gate] Exactitud por pares dentro de cada categoría (umbral de degradación 0.03):
+  categoría 0: vigente 0.8424 · candidato 0.8481 · delta +0.0057 (1409 pares)
+  categoría 1: vigente 0.8385 · candidato 0.8370 · delta -0.0015 (1356 pares)
+  categoría 2: vigente 0.8407 · candidato 0.8414 · delta +0.0007 (1425 pares)
+  categoría 3: vigente 0.8232 · candidato 0.8273 · delta +0.0042 (1442 pares)
+  categoría 4: vigente 0.8553 · candidato 0.8560 · delta +0.0007 (1368 pares)
+  categoría 5: vigente 0.8429 · candidato 0.8390 · delta -0.0039 (1267 pares)
+  categoría 6: vigente 0.8298 · candidato 0.8306 · delta +0.0007 (1387 pares)
+  categoría 7: vigente 0.8396 · candidato 0.8448 · delta +0.0052 (1334 pares)
+
+[promotion-gate] Decisión:
+  APROBADO (exit code 0)
+  Regla: Sin degradación global ni selectiva y sin alerta adversarial del Monitor.
+[promotion-gate] Registro de auditoría:
+{
+  "decision": "APROBADO",
+  "exit_code": 0,
+  "rule": "Sin degradación global ni selectiva y sin alerta adversarial del Monitor.",
+  "decided_at_utc": "2026-10-09T16:45:41.091774+00:00",
+  "feedback_scenario": "clean",
+  "monitor_signal": "none",
+  "thresholds": {
+    "GLOBAL_NDCG_TOLERANCE": 0.02,
+    "SUBPOP_MAX_DEGRADATION": 0.03
+  },
+  "canonical_set": {
+    "seeds": [
+      9001,
+      9002,
+      9003,
+      9004,
+      9005
+    ],
+    "sha256": "642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce"
+  },
+  "models": {
+    "current_sha256": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c",
+    "candidate_sha256": "d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f"
+  },
+  "metrics": {
+    "global_ndcg_at_10": {
+      "current": 0.87371,
+      "candidate": 0.878823,
+      "delta": 0.005113
+    },
+    "pairwise_accuracy_delta_by_category": {
+      "0": 0.005678,
+      "1": -0.001475,
+      "2": 0.000702,
+      "3": 0.004161,
+      "4": 0.000731,
+      "5": -0.003946,
+      "6": 0.000721,
+      "7": 0.005247
+    },
+    "degraded_categories": []
+  }
+}
+✅ OK: exit 0, según lo esperado.
+
+[2/4] Retroalimentación: poisoned · señal del Monitor: none (se espera exit 4)
+[promotion-gate] Escenario de retroalimentación: poisoned (semilla 500); señal del Monitor: none
+[promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
+[promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 a42ca30aec2fcf6eed6d8421923f60b90fd20b64cd1f401f92757cab5bbdc0dc
+
+[promotion-gate] NDCG@10 global en el conjunto canónico:
+  vigente 0.8737 · candidato 0.8702 · delta -0.0035 (tolerancia 0.02)
+[promotion-gate] Exactitud por pares dentro de cada categoría (umbral de degradación 0.03):
+  categoría 0: vigente 0.8424 · candidato 0.8581 · delta +0.0156 (1409 pares)
+  categoría 1: vigente 0.8385 · candidato 0.8348 · delta -0.0037 (1356 pares)
+  categoría 2: vigente 0.8407 · candidato 0.8400 · delta -0.0007 (1425 pares)
+  categoría 3: vigente 0.8232 · candidato 0.7483 · delta -0.0749 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  categoría 4: vigente 0.8553 · candidato 0.8596 · delta +0.0044 (1368 pares)
+  categoría 5: vigente 0.8429 · candidato 0.8437 · delta +0.0008 (1267 pares)
+  categoría 6: vigente 0.8298 · candidato 0.8284 · delta -0.0014 (1387 pares)
+  categoría 7: vigente 0.8396 · candidato 0.8486 · delta +0.0090 (1334 pares)
+
+[promotion-gate] Decisión:
+  RETENIDO (exit code 4)
+  Regla: Degradación selectiva en la(s) categoría(s) [3] sin degradación global; el Monitor no emitió alerta adversarial. El candidato no se promueve y se escala a revisión humana.
+  El candidato NO se promueve: el modelo vigente sigue en producción.
+[promotion-gate] Registro de auditoría:
+{
+  "decision": "RETENIDO",
+  "exit_code": 4,
+  "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global; el Monitor no emitió alerta adversarial. El candidato no se promueve y se escala a revisión humana.",
+  "decided_at_utc": "2026-10-09T16:45:58.446205+00:00",
+  "feedback_scenario": "poisoned",
+  "monitor_signal": "none",
+  "thresholds": {
+    "GLOBAL_NDCG_TOLERANCE": 0.02,
+    "SUBPOP_MAX_DEGRADATION": 0.03
+  },
+  "canonical_set": {
+    "seeds": [
+      9001,
+      9002,
+      9003,
+      9004,
+      9005
+    ],
+    "sha256": "642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce"
+  },
+  "models": {
+    "current_sha256": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c",
+    "candidate_sha256": "a42ca30aec2fcf6eed6d8421923f60b90fd20b64cd1f401f92757cab5bbdc0dc"
+  },
+  "metrics": {
+    "global_ndcg_at_10": {
+      "current": 0.87371,
+      "candidate": 0.870205,
+      "delta": -0.003505
+    },
+    "pairwise_accuracy_delta_by_category": {
+      "0": 0.015614,
+      "1": -0.003687,
+      "2": -0.000702,
+      "3": -0.074896,
+      "4": 0.004386,
+      "5": 0.000789,
+      "6": -0.001442,
+      "7": 0.008996
+    },
+    "degraded_categories": [
+      3
+    ]
+  }
+}
+
+✅ OK: exit 4, según lo esperado.
+
+[3/4] Retroalimentación: poisoned · señal del Monitor: adversarial (se espera exit 1)
+[promotion-gate] Escenario de retroalimentación: poisoned (semilla 500); señal del Monitor: adversarial
+[promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
+[promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 a42ca30aec2fcf6eed6d8421923f60b90fd20b64cd1f401f92757cab5bbdc0dc
+
+[promotion-gate] NDCG@10 global en el conjunto canónico:
+  vigente 0.8737 · candidato 0.8702 · delta -0.0035 (tolerancia 0.02)
+[promotion-gate] Exactitud por pares dentro de cada categoría (umbral de degradación 0.03):
+  categoría 0: vigente 0.8424 · candidato 0.8581 · delta +0.0156 (1409 pares)
+  categoría 1: vigente 0.8385 · candidato 0.8348 · delta -0.0037 (1356 pares)
+  categoría 2: vigente 0.8407 · candidato 0.8400 · delta -0.0007 (1425 pares)
+  categoría 3: vigente 0.8232 · candidato 0.7483 · delta -0.0749 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  categoría 4: vigente 0.8553 · candidato 0.8596 · delta +0.0044 (1368 pares)
+  categoría 5: vigente 0.8429 · candidato 0.8437 · delta +0.0008 (1267 pares)
+  categoría 6: vigente 0.8298 · candidato 0.8284 · delta -0.0014 (1387 pares)
+  categoría 7: vigente 0.8396 · candidato 0.8486 · delta +0.0090 (1334 pares)
+
+[promotion-gate] Decisión:
+  RECHAZADO (exit code 1)
+  Regla: Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.
+  El candidato NO se promueve: el modelo vigente sigue en producción.
+[promotion-gate] Registro de auditoría:
+{
+  "decision": "RECHAZADO",
+  "exit_code": 1,
+  "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.",
+  "decided_at_utc": "2026-10-09T16:46:16.929097+00:00",
+  "feedback_scenario": "poisoned",
+  "monitor_signal": "adversarial",
+  "thresholds": {
+    "GLOBAL_NDCG_TOLERANCE": 0.02,
+    "SUBPOP_MAX_DEGRADATION": 0.03
+  },
+  "canonical_set": {
+    "seeds": [
+      9001,
+      9002,
+      9003,
+      9004,
+      9005
+    ],
+    "sha256": "642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce"
+  },
+  "models": {
+    "current_sha256": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c",
+    "candidate_sha256": "a42ca30aec2fcf6eed6d8421923f60b90fd20b64cd1f401f92757cab5bbdc0dc"
+  },
+  "metrics": {
+    "global_ndcg_at_10": {
+      "current": 0.87371,
+      "candidate": 0.870205,
+      "delta": -0.003505
+    },
+    "pairwise_accuracy_delta_by_category": {
+      "0": 0.015614,
+      "1": -0.003687,
+      "2": -0.000702,
+      "3": -0.074896,
+      "4": 0.004386,
+      "5": 0.000789,
+      "6": -0.001442,
+      "7": 0.008996
+    },
+    "degraded_categories": [
+      3
+    ]
+  }
+}
+
+✅ OK: exit 1, según lo esperado.
+
+[4/4] Retroalimentación: clean · señal del Monitor: adversarial (se espera exit 4)
+[promotion-gate] Escenario de retroalimentación: clean (semilla 500); señal del Monitor: adversarial
+[promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
+[promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
+[promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
+
+[promotion-gate] NDCG@10 global en el conjunto canónico:
+  vigente 0.8737 · candidato 0.8788 · delta +0.0051 (tolerancia 0.02)
+[promotion-gate] Exactitud por pares dentro de cada categoría (umbral de degradación 0.03):
+  categoría 0: vigente 0.8424 · candidato 0.8481 · delta +0.0057 (1409 pares)
+  categoría 1: vigente 0.8385 · candidato 0.8370 · delta -0.0015 (1356 pares)
+  categoría 2: vigente 0.8407 · candidato 0.8414 · delta +0.0007 (1425 pares)
+  categoría 3: vigente 0.8232 · candidato 0.8273 · delta +0.0042 (1442 pares)
+  categoría 4: vigente 0.8553 · candidato 0.8560 · delta +0.0007 (1368 pares)
+  categoría 5: vigente 0.8429 · candidato 0.8390 · delta -0.0039 (1267 pares)
+  categoría 6: vigente 0.8298 · candidato 0.8306 · delta +0.0007 (1387 pares)
+  categoría 7: vigente 0.8396 · candidato 0.8448 · delta +0.0052 (1334 pares)
+
+[promotion-gate] Decisión:
+  RETENIDO (exit code 4)
+  Regla: Alerta adversarial del Monitor de Drift de Seguridad sin degradación medible en el conjunto canónico. El candidato no se promueve y se escala a revisión humana.
+  El candidato NO se promueve: el modelo vigente sigue en producción.
+[promotion-gate] Registro de auditoría:
+{
+  "decision": "RETENIDO",
+  "exit_code": 4,
+  "rule": "Alerta adversarial del Monitor de Drift de Seguridad sin degradación medible en el conjunto canónico. El candidato no se promueve y se escala a revisión humana.",
+  "decided_at_utc": "2026-10-09T16:46:34.415506+00:00",
+  "feedback_scenario": "clean",
+  "monitor_signal": "adversarial",
+  "thresholds": {
+    "GLOBAL_NDCG_TOLERANCE": 0.02,
+    "SUBPOP_MAX_DEGRADATION": 0.03
+  },
+  "canonical_set": {
+    "seeds": [
+      9001,
+      9002,
+      9003,
+      9004,
+      9005
+    ],
+    "sha256": "642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce"
+  },
+  "models": {
+    "current_sha256": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c",
+    "candidate_sha256": "d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f"
+  },
+  "metrics": {
+    "global_ndcg_at_10": {
+      "current": 0.87371,
+      "candidate": 0.878823,
+      "delta": 0.005113
+    },
+    "pairwise_accuracy_delta_by_category": {
+      "0": 0.005678,
+      "1": -0.001475,
+      "2": 0.000702,
+      "3": 0.004161,
+      "4": 0.000731,
+      "5": -0.003946,
+      "6": 0.000721,
+      "7": 0.005247
+    },
+    "degraded_categories": []
+  }
+}
+
+✅ OK: exit 4, según lo esperado.
+
+==============================================================
+ RESUMEN — Compuerta de Promoción
+==============================================================
+  ✅ clean     none         exit 0 (esperado 0)
+  ✅ poisoned  none         exit 4 (esperado 4)
+  ✅ poisoned  adversarial  exit 1 (esperado 1)
+  ✅ clean     adversarial  exit 4 (esperado 4)
+
+✅ RESULTADO GLOBAL: los cuatro escenarios dieron la decisión esperada.
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================

@@ -1,0 +1,97 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer3_promotion_seeds.sh
+ Fecha (UTC):     2026-10-09T16:46:35Z
+ Commit:          6476019
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-trainer  55746d750784
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CAPA 3 — Compuerta de Promoción: sensibilidad (6 semillas)
+==============================================================
+
+--- Semilla 7 (FEEDBACK_SEED=507) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8798 · delta +0.0061 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8336 · delta +0.0104 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 7 (FEEDBACK_SEED=507) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8692 · delta -0.0045 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7524 · delta -0.0707 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+--- Semilla 13 (FEEDBACK_SEED=513) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8793 · delta +0.0056 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8273 · delta +0.0042 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 13 (FEEDBACK_SEED=513) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8700 · delta -0.0037 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7684 · delta -0.0548 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+--- Semilla 42 (FEEDBACK_SEED=542) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8784 · delta +0.0047 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8204 · delta -0.0028 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 42 (FEEDBACK_SEED=542) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8708 · delta -0.0029 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7580 · delta -0.0652 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+--- Semilla 101 (FEEDBACK_SEED=601) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8796 · delta +0.0058 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8384 · delta +0.0153 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 101 (FEEDBACK_SEED=601) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8702 · delta -0.0035 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7462 · delta -0.0770 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+--- Semilla 777 (FEEDBACK_SEED=1277) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8804 · delta +0.0067 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8343 · delta +0.0111 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 777 (FEEDBACK_SEED=1277) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8710 · delta -0.0028 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7552 · delta -0.0680 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+--- Semilla 2026 (FEEDBACK_SEED=2526) · retroalimentación clean ---
+  vigente 0.8737 · candidato 0.8790 · delta +0.0053 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.8245 · delta +0.0014 (1442 pares)
+  APROBADO (exit code 0)
+
+--- Semilla 2026 (FEEDBACK_SEED=2526) · retroalimentación poisoned ---
+  vigente 0.8737 · candidato 0.8683 · delta -0.0055 (tolerancia 0.02)
+  categoría 3: vigente 0.8232 · candidato 0.7420 · delta -0.0811 (1442 pares)  <-- DEGRADACIÓN SELECTIVA
+  RETENIDO (exit code 4)
+
+==============================================================
+ MATRIZ DE RESULTADOS (esperado: limpia=0, envenenada=4)
+==============================================================
+semilla  limpia  d_global       d_cat3       envenenada  d_global       d_cat3      
+7        0       +0.0061        +0.0104      4           -0.0045        -0.0707     
+13       0       +0.0056        +0.0042      4           -0.0037        -0.0548     
+42       0       +0.0047        -0.0028      4           -0.0029        -0.0652     
+101      0       +0.0058        +0.0153      4           -0.0035        -0.0770     
+777      0       +0.0067        +0.0111      4           -0.0028        -0.0680     
+2026     0       +0.0053        +0.0014      4           -0.0055        -0.0811     
+
+✅ 12/12 veredictos según contrato.
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================

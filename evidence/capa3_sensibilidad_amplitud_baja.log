@@ -2,15 +2,15 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_seeds_low_amplitude.sh
- Fecha (UTC):     2026-10-09T15:13:03Z
- Commit:          2fa2a6d
+ Fecha (UTC):     2026-10-09T16:44:01Z
+ Commit:          6476019
  Docker Engine:   28.5.1
  Docker Compose:  2.40.0-desktop.1
  Imágenes:
+recoshop-prototype-trainer  55746d750784
 recoshop-prototype-inference-gateway  4bbfdc637cc1
 recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
-recoshop-prototype-trainer  98ed10d52ef6
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
