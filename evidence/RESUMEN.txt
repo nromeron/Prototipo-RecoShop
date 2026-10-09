@@ -1,5 +1,7 @@
-Captura de evidencia — 2026-10-09T16:50:12Z — commit 6476019
+Captura de evidencia — 2026-10-09T23:47:11Z — commit b63d448
 
+✅  capa1_procedencia_datos              exit 0
+✅  capa1_validador_modelos_externos     exit 0
 ✅  capa1_caso_positivo                  exit 0
 ✅  capa1_caso_negativo_append           exit 0
 ✅  capa1_caso_negativo_swap_signed      exit 0

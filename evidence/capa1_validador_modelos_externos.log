@@ -1,0 +1,146 @@
+==============================================================
+ EVIDENCIA — prototipo RecoShop
+==============================================================
+ Demo:            scripts/run_layer1_external_model_demo.sh
+ Fecha (UTC):     2026-10-09T23:05:20Z
+ Commit:          b63d448
+ Docker Engine:   28.5.1
+ Docker Compose:  2.40.0-desktop.1
+ Imágenes:
+recoshop-prototype-trainer  ba99b13dd010
+recoshop-prototype-inference-gateway  4bbfdc637cc1
+recoshop-prototype-feedback-gate  3aceb8514cb9
+recoshop-prototype-inference-client  b7d9e989e3f7
+recoshop-prototype-deployment-gate  ec2c25f63aa9
+recoshop-prototype-mlflow  6c81f2d724b5
+==============================================================
+
+==============================================================
+ CAPA 1 — P-03 Validador de Modelos Externos (D-06)
+==============================================================
+
+[1/4] Escenario: legitimate (se espera exit 0)
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[proveedor] Publica su modelo base legítimo, firmado.
+
+[validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
+[validador-modelos] SHA-256 del artefacto: 1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83
+[validador-modelos] Escaneo del artefacto serializado: formato LightGBM (texto)
+[validador-modelos] Entorno aislado: NDCG@10 en el conjunto canónico 0.8751 (mínimo 0.8)
+[validador-modelos] Búsqueda de disparadores (umbral de pico 0.5):
+  category               regiones    8 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  price                  regiones  147 · pico máximo 0.000 · activación 0.000 · región (-inf, 7.01]
+  user_purchase_history  regiones    7 · pico máximo 0.065 · activación 0.829 · región (5.5, +inf)
+  product_popularity     regiones  147 · pico máximo 0.003 · activación 0.003 · región (0.7434, +inf)
+  discount_pct           regiones    5 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  is_weekend             regiones    2 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+
+[validador-modelos] Controles del Validador de Modelos Externos:
+  ✅ control 1  Firma del proveedor con la clave registrada de la fuente
+  ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
+  ✅ control 3  Comportamiento en entorno aislado
+
+Modelo base ACEPTADO. Registro de validación: recoshop-provenance/base-models/1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83.json
+✅ OK: exit 0, según lo esperado.
+
+[2/4] Escenario: impostor (se espera exit 1)
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[atacante] Suplantación tipográfica: publica en «models-hub/sesions-ranker-base» un modelo firmado con su propia clave.
+
+[validador-modelos] Repositorio: models-hub/sesions-ranker-base · artefacto: model.txt
+[validador-modelos] SHA-256 del artefacto: 1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83
+[validador-modelos] El repositorio «models-hub/sesions-ranker-base» no es una fuente registrada.
+[validador-modelos] Escaneo del artefacto serializado: formato LightGBM (texto)
+[validador-modelos] Entorno aislado: NDCG@10 en el conjunto canónico 0.8751 (mínimo 0.8)
+[validador-modelos] Búsqueda de disparadores (umbral de pico 0.5):
+  category               regiones    8 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  price                  regiones  147 · pico máximo 0.000 · activación 0.000 · región (-inf, 7.01]
+  user_purchase_history  regiones    7 · pico máximo 0.065 · activación 0.829 · región (5.5, +inf)
+  product_popularity     regiones  147 · pico máximo 0.003 · activación 0.003 · región (0.7434, +inf)
+  discount_pct           regiones    5 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  is_weekend             regiones    2 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+
+[validador-modelos] Controles del Validador de Modelos Externos:
+  ❌ control 1  Firma del proveedor con la clave registrada de la fuente
+  ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
+  ✅ control 3  Comportamiento en entorno aislado
+
+Modelo base RECHAZADO: no ingresa al entrenamiento.
+
+✅ OK: exit 1, según lo esperado.
+
+[3/4] Escenario: malicious-pickle (se espera exit 1)
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[proveedor] Cuenta comprometida: publica un pickle firmado que ejecuta código al cargarse.
+
+[validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.pkl
+[validador-modelos] SHA-256 del artefacto: b0b2782cd600850ed9f3a06e96c5c2f639b4aa2caa362d3042af42b02ea130e1
+[validador-modelos] Escaneo del artefacto serializado: formato pickle; importa posix.system
+
+[validador-modelos] Controles del Validador de Modelos Externos:
+  ✅ control 1  Firma del proveedor con la clave registrada de la fuente
+  ❌ control 2  Escaneo del artefacto serializado (sin cargarlo)
+  — control 3  Comportamiento en entorno aislado (no evaluado: el artefacto no se carga)
+
+Modelo base RECHAZADO: no ingresa al entrenamiento.
+
+✅ OK: exit 1, según lo esperado.
+
+[4/4] Escenario: backdoor (se espera exit 4)
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[proveedor] Cuenta comprometida: publica en formato de texto un modelo firmado con puerta trasera (price = 13.37).
+
+[validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
+[validador-modelos] SHA-256 del artefacto: a923575e9b4932e069c1a99b111a4919973117e522824a661ec8728b2be0c212
+[validador-modelos] Escaneo del artefacto serializado: formato LightGBM (texto)
+[validador-modelos] Entorno aislado: NDCG@10 en el conjunto canónico 0.8734 (mínimo 0.8)
+[validador-modelos] Búsqueda de disparadores (umbral de pico 0.5):
+  category               regiones    8 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  price                  regiones  134 · pico máximo 0.931 · activación 0.931 · región (13.335, 13.38]  <-- DISPARADOR ESTRECHO
+  user_purchase_history  regiones    7 · pico máximo 0.057 · activación 0.831 · región (5.5, +inf)
+  product_popularity     regiones  139 · pico máximo 0.001 · activación 0.001 · región (0.5543, 0.5662]
+  discount_pct           regiones    5 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+  is_weekend             regiones    2 · pico máximo 0.000 · activación 0.000 · región (-inf, 0]
+
+[validador-modelos] Controles del Validador de Modelos Externos:
+  ✅ control 1  Firma del proveedor con la clave registrada de la fuente
+  ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
+  ❌ control 3  Comportamiento en entorno aislado
+
+Modelo base en CUARENTENA: firma y formato válidos, pero el comportamiento presenta un disparador estrecho.
+
+✅ OK: exit 4, según lo esperado.
+
+==============================================================
+ RESUMEN — Validador de Modelos Externos
+==============================================================
+  ✅ legitimate        exit 0 (esperado 0)
+  ✅ impostor          exit 1 (esperado 1)
+  ✅ malicious-pickle  exit 1 (esperado 1)
+  ✅ backdoor          exit 4 (esperado 4)
+
+✅ RESULTADO GLOBAL: los cuatro escenarios dieron la decisión esperada.
+
+==============================================================
+ CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
+==============================================================
