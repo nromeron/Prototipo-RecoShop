@@ -2,12 +2,12 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer1_external_model_demo.sh
- Fecha (UTC):     2026-10-09T23:05:20Z
- Commit:          b63d448
+ Fecha (UTC):     2026-10-10T00:05:10Z
+ Commit:          37ac5d6
  Docker Engine:   28.5.1
  Docker Compose:  2.40.0-desktop.1
  Imágenes:
-recoshop-prototype-trainer  ba99b13dd010
+recoshop-prototype-trainer  3c6d5e3b1f62
 recoshop-prototype-inference-gateway  4bbfdc637cc1
 recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
@@ -44,8 +44,11 @@ recoshop-prototype-mlflow  6c81f2d724b5
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ✅ control 3  Comportamiento en entorno aislado
+[sign_model] Firmando artefacto: /tmp/tmplo4kmwvl/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmplo4kmwvl/record.json.sig --tlog-upload=false --yes /tmp/tmplo4kmwvl/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmplo4kmwvl/record.json.sig
 
-Modelo base ACEPTADO. Registro de validación: recoshop-provenance/base-models/1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83.json
+Modelo base ACEPTADO. Registro de validación (firmado por RecoShop): recoshop-provenance/base-models/1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83.json
 ✅ OK: exit 0, según lo esperado.
 
 [2/4] Escenario: impostor (se espera exit 1)
@@ -126,6 +129,9 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ❌ control 3  Comportamiento en entorno aislado
+[sign_model] Firmando artefacto: /tmp/tmp_gb4p50t/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp_gb4p50t/record.json.sig --tlog-upload=false --yes /tmp/tmp_gb4p50t/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmp_gb4p50t/record.json.sig
 
 Modelo base en CUARENTENA: firma y formato válidos, pero el comportamiento presenta un disparador estrecho.
 

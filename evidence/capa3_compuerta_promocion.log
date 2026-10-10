@@ -2,12 +2,12 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_promotion_demo.sh
- Fecha (UTC):     2026-10-09T23:29:47Z
- Commit:          b63d448
+ Fecha (UTC):     2026-10-10T00:28:27Z
+ Commit:          37ac5d6
  Docker Engine:   28.5.1
  Docker Compose:  2.40.0-desktop.1
  Imágenes:
-recoshop-prototype-trainer  ba99b13dd010
+recoshop-prototype-trainer  3c6d5e3b1f62
 recoshop-prototype-inference-gateway  4bbfdc637cc1
 recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
@@ -45,7 +45,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "APROBADO",
   "exit_code": 0,
   "rule": "Sin degradación global ni selectiva y sin alerta adversarial del Monitor.",
-  "decided_at_utc": "2026-10-09T23:30:34.382888+00:00",
+  "decided_at_utc": "2026-10-10T00:33:07.086816+00:00",
   "feedback_scenario": "clean",
   "monitor_signal": "none",
   "thresholds": {
@@ -114,7 +114,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RETENIDO",
   "exit_code": 4,
   "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global; el Monitor no emitió alerta adversarial. El candidato no se promueve y se escala a revisión humana.",
-  "decided_at_utc": "2026-10-09T23:31:11.109469+00:00",
+  "decided_at_utc": "2026-10-10T00:36:50.262401+00:00",
   "feedback_scenario": "poisoned",
   "monitor_signal": "none",
   "thresholds": {
@@ -186,7 +186,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RECHAZADO",
   "exit_code": 1,
   "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.",
-  "decided_at_utc": "2026-10-09T23:31:40.090754+00:00",
+  "decided_at_utc": "2026-10-10T00:38:20.046103+00:00",
   "feedback_scenario": "poisoned",
   "monitor_signal": "adversarial",
   "thresholds": {
@@ -258,7 +258,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RETENIDO",
   "exit_code": 4,
   "rule": "Alerta adversarial del Monitor de Drift de Seguridad sin degradación medible en el conjunto canónico. El candidato no se promueve y se escala a revisión humana.",
-  "decided_at_utc": "2026-10-09T23:32:17.300496+00:00",
+  "decided_at_utc": "2026-10-10T00:39:43.767965+00:00",
   "feedback_scenario": "clean",
   "monitor_signal": "adversarial",
   "thresholds": {

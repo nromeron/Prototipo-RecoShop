@@ -2,12 +2,12 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_demo.sh
- Fecha (UTC):     2026-10-09T23:17:17Z
- Commit:          b63d448
+ Fecha (UTC):     2026-10-10T00:19:24Z
+ Commit:          37ac5d6
  Docker Engine:   28.5.1
  Docker Compose:  2.40.0-desktop.1
  Imágenes:
-recoshop-prototype-trainer  ba99b13dd010
+recoshop-prototype-trainer  3c6d5e3b1f62
 recoshop-prototype-inference-gateway  4bbfdc637cc1
 recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
@@ -129,7 +129,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "CUARENTENA",
   "exit_code": 4,
   "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
-  "quarantined_at_utc": "2026-10-09T23:18:13.708318+00:00",
+  "quarantined_at_utc": "2026-10-10T00:20:00.777376+00:00",
   "thresholds": {
     "KS_ALPHA": 0.05,
     "KS_STAT_THRESHOLD": 0.04,

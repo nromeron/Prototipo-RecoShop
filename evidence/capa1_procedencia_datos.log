@@ -2,12 +2,12 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer1_provenance_demo.sh
- Fecha (UTC):     2026-10-09T23:03:45Z
- Commit:          b63d448
+ Fecha (UTC):     2026-10-10T00:03:15Z
+ Commit:          37ac5d6
  Docker Engine:   28.5.1
  Docker Compose:  2.40.0-desktop.1
  Imágenes:
-recoshop-prototype-trainer  ba99b13dd010
+recoshop-prototype-trainer  3c6d5e3b1f62
 recoshop-prototype-inference-gateway  4bbfdc637cc1
 recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
@@ -19,7 +19,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
  CAPA 1 — P-03 Compuerta de Procedencia de Datos (D-07)
 ==============================================================
 
-[1/4] Escenario: tampered (se espera exit 1)
+[1/5] Escenario: tampered (se espera exit 1)
  Container recoshop-minio  Running
  Container recoshop-mlflow  Running
  Container recoshop-minio-init  Starting
@@ -46,7 +46,7 @@ Lote RECHAZADO: no ingresa al lago de datos.
 
 ✅ OK: exit 1, según lo esperado.
 
-[2/4] Escenario: unauthorized (se espera exit 1)
+[2/5] Escenario: unauthorized (se espera exit 1)
  Container recoshop-minio  Running
  Container recoshop-mlflow  Running
  Container recoshop-minio-init  Starting
@@ -72,7 +72,7 @@ Lote RECHAZADO: no ingresa al lago de datos.
 
 ✅ OK: exit 1, según lo esperado.
 
-[3/4] Escenario: poisoned (se espera exit 4)
+[3/5] Escenario: poisoned (se espera exit 4)
  Container recoshop-minio  Running
  Container recoshop-mlflow  Running
  Container recoshop-minio-init  Starting
@@ -94,12 +94,31 @@ Lote RECHAZADO: no ingresa al lago de datos.
   ✅ control 2  Integridad del lote (SHA-256 y filas del manifiesto)
   ✅ control 3  Esquema (columnas, tipos y rangos)
   ❌ control 4  Validación estadística básica frente al perfil de referencia
+[sign_model] Firmando artefacto: /tmp/tmpbe5xx0m0/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpbe5xx0m0/record.json.sig --tlog-upload=false --yes /tmp/tmpbe5xx0m0/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmpbe5xx0m0/record.json.sig
 
 Lote en CUARENTENA: procedencia e integridad verificadas, pero la distribución difiere del perfil de referencia (revisión antes de ingresar al lago de datos).
 
 ✅ OK: exit 4, según lo esperado.
 
-[4/4] Escenario: legitimate (se espera exit 0)
+[4/5] Escenario: forged-record (se espera exit 1)
+ Container recoshop-minio  Running
+ Container recoshop-mlflow  Running
+ Container recoshop-minio-init  Starting
+ Container recoshop-minio-init  Started
+ Container recoshop-minio-init  Waiting
+ Container recoshop-minio-init  Exited
+[atacante] Escribe en recoshop-provenance un registro que declara aceptado el conjunto de datos de la semilla 7, firmado con su propia clave.
+
+[verificación-de-procedencia] Registro: recoshop-provenance/datasets/cc773bd8a743be97f88bb39086caf3a17c2f1064dbbbc5897c9437d74ef86906.json
+[verificación-de-procedencia] Firma del registro con la clave pública de RecoShop: inválida (estado: firma-invalida)
+
+Registro RECHAZADO: no cuenta como procedencia verificada; el ML-BOM de un modelo entrenado con ese conjunto de datos lo declarará no verificado.
+
+✅ OK: exit 1, según lo esperado.
+
+[5/5] Escenario: legitimate (se espera exit 0)
  Container recoshop-minio  Running
  Container recoshop-mlflow  Running
  Container recoshop-minio-init  Starting
@@ -120,19 +139,23 @@ Lote en CUARENTENA: procedencia e integridad verificadas, pero la distribución 
   ✅ control 2  Integridad del lote (SHA-256 y filas del manifiesto)
   ✅ control 3  Esquema (columnas, tipos y rangos)
   ✅ control 4  Validación estadística básica frente al perfil de referencia
+[sign_model] Firmando artefacto: /tmp/tmpi4u0j7g_/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpi4u0j7g_/record.json.sig --tlog-upload=false --yes /tmp/tmpi4u0j7g_/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmpi4u0j7g_/record.json.sig
 
-Lote ACEPTADO. Registro de procedencia: recoshop-provenance/datasets/afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d.json
+Lote ACEPTADO. Registro de procedencia (firmado por RecoShop): recoshop-provenance/datasets/afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d.json
 ✅ OK: exit 0, según lo esperado.
 
 ==============================================================
  RESUMEN — Compuerta de Procedencia de Datos
 ==============================================================
-  ✅ tampered      exit 1 (esperado 1)
-  ✅ unauthorized  exit 1 (esperado 1)
-  ✅ poisoned      exit 4 (esperado 4)
-  ✅ legitimate    exit 0 (esperado 0)
+  ✅ tampered       exit 1 (esperado 1)
+  ✅ unauthorized   exit 1 (esperado 1)
+  ✅ poisoned       exit 4 (esperado 4)
+  ✅ forged-record  exit 1 (esperado 1)
+  ✅ legitimate     exit 0 (esperado 0)
 
-✅ RESULTADO GLOBAL: los cuatro escenarios dieron la decisión esperada.
+✅ RESULTADO GLOBAL: los cinco escenarios dieron la decisión esperada.
 
 ==============================================================
  CÓDIGO DE SALIDA DEL SCRIPT: 0  (0 = comportamiento según contrato)
