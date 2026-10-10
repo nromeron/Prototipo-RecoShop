@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos_·_39%2F39_veredictos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos-2EA043)
 
 </div>
 
@@ -123,10 +123,11 @@ flowchart TB
 
 ### Capa 1 · P-03 Trusted ML Artifact Pipeline
 
-**Debilidades:** D-01, D-06 y D-07. La capa implementa los cuatro
-sub-componentes del patrón: la Compuerta de Procedencia de Datos y el
-Validador de Modelos Externos, a la entrada, y la firma con ML-BOM y el
-`deployment-gate`, a la salida.
+**Debilidades:** D-01, D-06 y D-07. La capa implementa los tres
+sub-componentes del patrón y su documento de enlace: la Compuerta de
+Procedencia de Datos y el Validador de Modelos Externos, a la entrada; la
+Compuerta de Firma y Registro de Artefactos (firma y `deployment-gate`), a la
+salida; y el ML-BOM, que enlaza la cadena.
 
 **D-01.** Si el Model Registry confía en que lo que guarda es lo
 que se entrenó, quien comprometa el almacenamiento puede sustituir el modelo
@@ -536,7 +537,7 @@ producción:
   (*low-and-slow*) queda fuera del alcance de un detector por lote.
 - Firma con claves locales y **sin registro de transparencia** (Rekor). En
   producción, las claves vivirían en un KMS con rotación y revocación.
-- **P-03** implementa sus cuatro sub-componentes. Los terceros (socio y
+- **P-03** implementa sus tres sub-componentes y el ML-BOM. Los terceros (socio y
   proveedor) se simulan en el mismo MinIO, con claves propias. El prototipo
   entrena desde cero: el modelo base validado no se usa como punto de
   partida, así que el ML-BOM enlaza el dataset con su procedencia, pero no
