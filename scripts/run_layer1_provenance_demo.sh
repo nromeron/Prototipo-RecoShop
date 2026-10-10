@@ -13,11 +13,17 @@
 #                  registrada
 #   poisoned       lote firmado por el socio comprometido, con    exit 4 (CUARENTENA)
 #                  10 % de registros falsificados
+#   forged-record  registro de procedencia fabricado por quien     exit 1 (RECHAZADO)
+#                  escribe en recoshop-provenance, sin la clave
+#                  de RecoShop
 #
-# El escenario legítimo deja el registro de procedencia que train.py enlaza
-# en el ML-BOM; por eso esta demo se ejecuta antes que las de la Capa 1.
+# El escenario legítimo deja el registro de procedencia, firmado por RecoShop,
+# que train.py verifica y enlaza en el ML-BOM; por eso esta demo se ejecuta
+# antes que las de la Capa 1. El registro fabricado apunta al conjunto de
+# datos de la semilla 7: las demos de sustitución firmada lo declaran no
+# verificado.
 #
-# Convención de salida: 0 si los cuatro escenarios dan el código esperado;
+# Convención de salida: 0 si los cinco escenarios dan el código esperado;
 # 1 en caso contrario.
 # =============================================================================
 set -euo pipefail
@@ -34,6 +40,7 @@ SCENARIOS=(
   "tampered|1"
   "unauthorized|1"
   "poisoned|4"
+  "forged-record|1"
   "legitimate|0"
 )
 
@@ -71,11 +78,11 @@ for entry in "${SCENARIOS[@]}"; do
   IFS='|' read -r scenario expected <<< "$entry"
   code="${ACTUAL[$scenario]}"
   if [ "$code" -eq "$expected" ]; then mark="✅"; else mark="❌"; fi
-  printf "  %s %-13s exit %s (esperado %s)\n" "$mark" "$scenario" "$code" "$expected"
+  printf "  %s %-14s exit %s (esperado %s)\n" "$mark" "$scenario" "$code" "$expected"
 done
 echo ""
 if [ "$OVERALL_EXIT" -eq 0 ]; then
-  echo "✅ RESULTADO GLOBAL: los cuatro escenarios dieron la decisión esperada."
+  echo "✅ RESULTADO GLOBAL: los cinco escenarios dieron la decisión esperada."
 else
   echo "⚠️  RESULTADO GLOBAL: al menos un escenario no dio la decisión esperada."
 fi

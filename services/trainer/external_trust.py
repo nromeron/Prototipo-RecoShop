@@ -26,9 +26,15 @@ está registrada: la verificación contra el ancla de confianza falla.
 
 Las claves de los terceros se generan sin contraseña porque son de terceros
 SIMULADOS; las claves propias de RecoShop siguen en keys/ (generate_keys.sh).
+
+Los registros que emiten las compuertas (procedencia de un lote aceptado,
+validación de un modelo base, cuarentenas) se firman con la clave de
+RecoShop. Quien pueda escribir en recoshop-provenance no puede, sin esa
+clave, fabricar un registro que el entrenamiento acepte como verificado.
 """
 
 import hashlib
+import json
 import os
 import subprocess
 import tempfile
@@ -41,6 +47,9 @@ TRUST_BUCKET = "recoshop-trust"
 PROVENANCE_BUCKET = "recoshop-provenance"
 
 # Fuentes registradas: identificador lógico -> nombre del ancla de confianza.
+RECOSHOP_KEY_PATH = os.environ.get("COSIGN_KEY_PATH", "/keys/cosign.key")
+RECOSHOP_PUB_PATH = os.environ.get("COSIGN_PUB_PATH", "/keys/cosign.pub")
+
 DATA_PARTNER = "recoshop-commerce-api"          # socio que exporta /export/events
 MODEL_PROVIDER = "models-hub/sessions-ranker-base"  # proveedor del modelo base
 
@@ -152,3 +161,43 @@ def verify_blob(blob_path: str, sig_path: str, pub_path: str) -> bool:
         env=_cosign_env(), capture_output=True, text=True,
     )
     return result.returncode == 0
+
+
+def put_signed_record(client, key: str, record: dict) -> None:
+    """
+    Escribe en recoshop-provenance un registro de las compuertas y su firma
+    con la clave de RecoShop (la misma que firma modelos y ML-BOM).
+    """
+    from sign_model import sign_artifact   # requiere COSIGN_PASSWORD en el entorno
+    body = json.dumps(record, indent=2, ensure_ascii=False).encode("utf-8")
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "record.json")
+        with open(path, "wb") as f:
+            f.write(body)
+        sign_artifact(path, RECOSHOP_KEY_PATH, path + ".sig")
+        client.upload_file(path, PROVENANCE_BUCKET, key)
+        client.upload_file(path + ".sig", PROVENANCE_BUCKET, key + ".sig")
+
+
+def get_verified_record(client, key: str):
+    """
+    Lee un registro de recoshop-provenance y verifica su firma con la clave
+    pública de RecoShop. Retorna (registro, estado), con estado:
+      "verificada"      registro presente y firmado por RecoShop
+      "sin-registro"    no existe registro para esa clave
+      "firma-invalida"  hay registro, pero sin firma válida de RecoShop
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "record.json")
+        try:
+            client.download_file(PROVENANCE_BUCKET, key, path)
+        except ClientError:
+            return None, "sin-registro"
+        try:
+            client.download_file(PROVENANCE_BUCKET, key + ".sig", path + ".sig")
+        except ClientError:
+            return None, "firma-invalida"
+        if not verify_blob(path, path + ".sig", RECOSHOP_PUB_PATH):
+            return None, "firma-invalida"
+        with open(path, encoding="utf-8") as f:
+            return json.load(f), "verificada"

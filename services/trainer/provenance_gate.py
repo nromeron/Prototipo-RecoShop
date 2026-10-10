@@ -27,9 +27,10 @@ Decisión:
   - Pasan los cuatro                         -> ACEPTADO   (exit 0)
 
 Al aceptar, la compuerta escribe un REGISTRO DE PROCEDENCIA en
-recoshop-provenance/datasets/<sha256>.json. train.py lo busca por el resumen
-de su conjunto de datos y lo declara en el ML-BOM: es el enlace entre este
-sub-componente y la Compuerta de Firma y Registro de Artefactos.
+recoshop-provenance/datasets/<sha256>.json, firmado con la clave de RecoShop.
+train.py lo busca por el resumen de su conjunto de datos, verifica la firma y
+lo declara en el ML-BOM: es el enlace entre este sub-componente y la
+Compuerta de Firma y Registro de Artefactos.
 
 Escenarios (--scenario):
   legitimate   — el socio exporta el lote real (el mismo conjunto de datos
@@ -42,6 +43,11 @@ Escenarios (--scenario):
   poisoned     — el socio, comprometido aguas arriba, exporta y firma un lote
                  con un 10 % de registros sintéticos que atribuyen relevancia
                  máxima a listados falsificados (escenario de D-07 en A4.2).
+  forged-record — un atacante con escritura en recoshop-provenance fabrica un
+                 registro que declara aceptado el conjunto de datos de la
+                 semilla 7, firmado con su propia clave. Se lee el registro
+                 como lo hace el entrenamiento: sin firma válida de RecoShop,
+                 no cuenta como procedencia verificada (RECHAZADO, exit 1).
 
 Códigos de salida: 0 ACEPTADO · 1 RECHAZADO · 2 ERROR DE INFRAESTRUCTURA ·
 4 CUARENTENA.
@@ -68,6 +74,7 @@ SCHEMA_VERSION = "recoshop-events-v1"
 EXPORT_ENDPOINT = "/export/events"
 
 EXPORT_SEED = 42        # la exportación real es el conjunto de datos de la Capa 1
+FORGED_TARGET_SEED = 7  # conjunto de datos de la versión anterior que usan los ataques de sustitución
 REFERENCE_SEED = 41     # perfil de referencia: la exportación anterior aceptada
 
 KS_STAT_THRESHOLD = float(os.environ.get("PROVENANCE_KS_STAT_THRESHOLD", "0.08"))
@@ -259,10 +266,10 @@ def evaluate(prefix: str, client) -> int:
         print("\nLote RECHAZADO: no ingresa al lago de datos.")
         return 1
     if not results["c4"]:
+        et.put_signed_record(client, f"quarantine/{data_hash}.json",
+                             {"manifest": manifest, "statistics": st})
         print("\nLote en CUARENTENA: procedencia e integridad verificadas, pero la distribución "
               "difiere del perfil de referencia (revisión antes de ingresar al lago de datos).")
-        client.put_object(Bucket=et.PROVENANCE_BUCKET, Key=f"quarantine/{data_hash}.json",
-                          Body=json.dumps({"manifest": manifest, "statistics": st}, indent=2).encode())
         return 4
 
     record = {
@@ -277,21 +284,60 @@ def evaluate(prefix: str, client) -> int:
         "validated_by": "Compuerta de Procedencia de Datos (P-03)",
         "controls": ["firma del manifiesto", "integridad", "esquema", "validación estadística básica"],
     }
-    client.put_object(Bucket=et.PROVENANCE_BUCKET, Key=f"datasets/{data_hash}.json",
-                      Body=json.dumps(record, indent=2, ensure_ascii=False).encode("utf-8"))
-    print(f"\nLote ACEPTADO. Registro de procedencia: {et.PROVENANCE_BUCKET}/datasets/{data_hash}.json")
+    et.put_signed_record(client, f"datasets/{data_hash}.json", record)
+    print(f"\nLote ACEPTADO. Registro de procedencia (firmado por RecoShop): "
+          f"{et.PROVENANCE_BUCKET}/datasets/{data_hash}.json")
+    return 0
+
+
+def forged_record(client) -> int:
+    """El atacante fabrica un registro de procedencia; se lee como lo hace train.py."""
+    target = et.sha256_bytes(_csv_bytes(generate_recoshop_dataset(seed=FORGED_TARGET_SEED)))
+    key = f"datasets/{target}.json"
+    fake = {
+        "dataset_sha256": target,
+        "source": et.DATA_PARTNER,
+        "endpoint": EXPORT_ENDPOINT,
+        "schema_version": SCHEMA_VERSION,
+        "accepted_at_utc": datetime.now(timezone.utc).isoformat(),
+        "validated_by": "Compuerta de Procedencia de Datos (P-03)",
+    }
+    print(f"[atacante] Escribe en {et.PROVENANCE_BUCKET} un registro que declara aceptado el conjunto "
+          f"de datos de la semilla {FORGED_TARGET_SEED}, firmado con su propia clave.")
+    with tempfile.TemporaryDirectory() as tmp:
+        path = os.path.join(tmp, "record.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(fake, f, indent=2, ensure_ascii=False)
+        attacker_key, _ = et.generate_key_pair(tmp, "attacker")
+        et.sign_blob(path, attacker_key, path + ".sig")
+        client.upload_file(path, et.PROVENANCE_BUCKET, key)
+        client.upload_file(path + ".sig", et.PROVENANCE_BUCKET, key + ".sig")
+
+    print("")
+    print(f"[verificación-de-procedencia] Registro: {et.PROVENANCE_BUCKET}/{key}")
+    _, status = et.get_verified_record(client, key)
+    ok = status != "verificada"
+    print(f"[verificación-de-procedencia] Firma del registro con la clave pública de RecoShop: "
+          f"{'inválida' if ok else 'válida'} (estado: {status})")
+    if ok:
+        print("\nRegistro RECHAZADO: no cuenta como procedencia verificada; el ML-BOM de un modelo "
+              "entrenado con ese conjunto de datos lo declarará no verificado.")
+        return 1
+    print("\nRegistro ACEPTADO: el registro falsificado pasaría como procedencia verificada.")
     return 0
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compuerta de Procedencia de Datos (P-03)")
     parser.add_argument("--scenario", required=True,
-                        choices=["legitimate", "tampered", "unauthorized", "poisoned"])
+                        choices=["legitimate", "tampered", "unauthorized", "poisoned", "forged-record"])
     args = parser.parse_args()
     try:
         client = et.s3()
         et.ensure_buckets(client)
         et.onboard_party(et.DATA_PARTNER, client)
+        if args.scenario == "forged-record":
+            return forged_record(client)
         prefix = publish(args.scenario, client)
     except Exception as exc:  # noqa: BLE001
         print(f"[compuerta-procedencia] ERROR DE INFRAESTRUCTURA preparando el escenario: {exc}")

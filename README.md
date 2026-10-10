@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos_·_38%2F38_veredictos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos_·_39%2F39_veredictos-2EA043)
 
 </div>
 
@@ -211,12 +211,19 @@ reporta todos:
 | Feed suplantado con clave no registrada | ❌ | ✅ | ✅ | ❌ | **Rechazado** (1) |
 | Socio comprometido: 10 % de registros falsificados, firmados | ✅ | ✅ | ✅ | ❌ | **Cuarentena** (4) |
 
-Al aceptar un lote, la compuerta escribe su **registro de procedencia**.
-`train.py` lo busca por el SHA-256 de su dataset y lo declara en el ML-BOM
-firmado (`recoshop:provenance:*`): el lote legítimo es el mismo dataset que
-entrena la Capa 1, así que el modelo de referencia queda enlazado con su
-fuente sin cambiar su hash. Un dataset sin registro queda declarado como
-`no-verificada`.
+Al aceptar un lote, la compuerta escribe su **registro de procedencia** y lo
+firma con la clave de RecoShop. `train.py` lo busca por el SHA-256 de su
+dataset, verifica la firma y lo declara en el ML-BOM firmado
+(`recoshop:provenance:*`): el lote legítimo es el mismo dataset que entrena
+la Capa 1, así que el modelo de referencia queda enlazado con su fuente sin
+cambiar su hash. Un dataset sin registro, o con un registro sin firma válida
+de RecoShop, queda declarado como `no-verificada`.
+
+Un quinto escenario ataca ese enlace: quien puede escribir en
+`recoshop-provenance` fabrica un registro que declara aceptado el dataset de
+la semilla 7, firmado con su propia clave. La verificación lo rechaza
+(exit 1), y los entrenamientos con la semilla 7 de las demos de sustitución
+firmada lo declaran no verificado.
 
 #### Validador de Modelos Externos (D-06)
 
@@ -408,7 +415,7 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 
 | Demostración | Resultado |
 |---|---|
-| Capa 1 · Compuerta de Procedencia de Datos | ✅ 1 / 1 / 4 / 0 |
+| Capa 1 · Compuerta de Procedencia de Datos | ✅ 1 / 1 / 4 / 1 / 0 |
 | Capa 1 · Validador de Modelos Externos | ✅ 0 / 1 / 1 / 4 |
 | Capa 1 · caso positivo | ✅ aprobado |
 | Capa 1 · bytes alterados | ✅ rechazado |
@@ -534,7 +541,9 @@ producción:
   entrena desde cero: el modelo base validado no se usa como punto de
   partida, así que el ML-BOM enlaza el dataset con su procedencia, pero no
   un modelo base. La búsqueda de disparadores cubre una característica a la
-  vez.
+  vez. El escaneo del artefacto sigue el principio de ModelScan (inspeccionar
+  las importaciones del pickle sin cargarlo) sin usar la herramienta, y el
+  entorno aislado es el propio contenedor `trainer`, sin bloqueo de red.
 - **P-02** implementa sus tres sub-componentes. La señal del Monitor llega a
   la Compuerta de Promoción como argumento del script, no por un canal
   compartido en ejecución.

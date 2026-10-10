@@ -38,7 +38,7 @@ import numpy as np
 from mlflow.tracking import MlflowClient
 from sklearn.metrics import ndcg_score
 
-from external_trust import PROVENANCE_BUCKET, s3
+from external_trust import get_verified_record, s3
 from generate_data import generate_recoshop_dataset
 from mlbom import build_mlbom, sha256_of_dataframe
 from sign_model import CosignNotFoundError, CosignSigningError, sign_artifact
@@ -68,16 +68,17 @@ def sha256_of_file(path: str) -> str:
 def lookup_provenance(dataset_hash: str):
     """
     Busca el registro que emitió la Compuerta de Procedencia de Datos al
-    aceptar un lote con este SHA-256 (provenance_gate.py). Si existe, el ML-BOM
-    enlaza el dataset con su fuente; si no, el ML-BOM lo declara sin
-    procedencia verificada. La búsqueda no altera el entrenamiento: el modelo
-    es el mismo en ambos casos.
+    aceptar un lote con este SHA-256 (provenance_gate.py) y verifica su firma
+    con la clave pública de RecoShop. Retorna (registro, estado); el estado es
+    "verificada", "sin-registro", "firma-invalida" o "sin-acceso". Solo un
+    registro firmado por RecoShop cuenta como procedencia verificada. La
+    búsqueda no altera el entrenamiento: el modelo es el mismo en todos los
+    casos.
     """
     try:
-        body = s3().get_object(Bucket=PROVENANCE_BUCKET, Key=f"datasets/{dataset_hash}.json")["Body"]
-        return json.loads(body.read())
-    except Exception:  # noqa: BLE001 — sin registro o sin acceso: no verificada
-        return None
+        return get_verified_record(s3(), f"datasets/{dataset_hash}.json")
+    except Exception:  # noqa: BLE001 — sin acceso al almacén: no verificada
+        return None, "sin-acceso"
 
 
 def train_and_evaluate():
@@ -144,12 +145,18 @@ def main():
     model, ndcg_at_10, n_train_sessions, n_eval_sessions, dataset_df = train_and_evaluate()
     dataset_hash = sha256_of_dataframe(dataset_df)
     print(f"[train] SHA-256 del dataset de entrenamiento: {dataset_hash}")
-    provenance = lookup_provenance(dataset_hash)
+    provenance, provenance_status = lookup_provenance(dataset_hash)
     if provenance:
         print(f"[train] Procedencia del dataset: VERIFICADA (fuente {provenance['source']}, "
-              f"aceptado {provenance['accepted_at_utc']} por la Compuerta de Procedencia)")
+              f"aceptado {provenance['accepted_at_utc']} por la Compuerta de Procedencia; "
+              "registro firmado por RecoShop)")
     else:
-        print("[train] Procedencia del dataset: NO VERIFICADA (sin registro de la Compuerta de Procedencia)")
+        reason = {
+            "sin-registro": "sin registro de la Compuerta de Procedencia",
+            "firma-invalida": "el registro no tiene firma válida de RecoShop",
+            "sin-acceso": "no fue posible consultar el almacén de procedencia",
+        }[provenance_status]
+        print(f"[train] Procedencia del dataset: NO VERIFICADA ({reason})")
 
     with mlflow.start_run() as run:
         run_id = run.info.run_id
@@ -202,6 +209,7 @@ def main():
                 n_train_sessions=n_train_sessions,
                 n_eval_sessions=n_eval_sessions,
                 provenance=provenance,
+                provenance_status=provenance_status,
             )
             with open(mlbom_path, "w", encoding="utf-8") as f:
                 json.dump(bom, f, indent=2, ensure_ascii=False)

@@ -32,7 +32,8 @@ Decisión:
   - Pasan 1 y 2 y falla el 3       -> CUARENTENA (exit 4)
   - Pasan los tres                 -> ACEPTADO   (exit 0); se escribe un
                                       registro de validación en
-                                      recoshop-provenance/base-models/.
+                                      recoshop-provenance/base-models/, firmado
+                                      con la clave de RecoShop.
 
 Cobertura declarada: la búsqueda detecta disparadores sobre UNA
 característica en una región estrecha; no detecta disparadores conjuntivos
@@ -274,17 +275,18 @@ def evaluate(prefix: str, client) -> int:
         print("\nModelo base RECHAZADO: no ingresa al entrenamiento.")
         return 1
     if not c3:
-        print("\nModelo base en CUARENTENA: firma y formato válidos, pero el comportamiento "
-              "presenta un disparador estrecho.")
-        client.put_object(Bucket=et.PROVENANCE_BUCKET, Key=f"quarantine/{artifact_hash}.json",
-                          Body=json.dumps({"meta": meta, "behaviour": behaviour}, indent=2).encode())
+        reason = ("presenta un disparador estrecho"
+                  if any(r["flagged"] for r in behaviour["trigger_search"].values())
+                  else "no alcanza el rendimiento mínimo en el conjunto canónico")
+        et.put_signed_record(client, f"quarantine/{artifact_hash}.json", {"meta": meta, "behaviour": behaviour})
+        print(f"\nModelo base en CUARENTENA: firma y formato válidos, pero el comportamiento {reason}.")
         return 4
     record = {"artifact_sha256": artifact_hash, "repository": repo, "format": fmt,
               "validated_at_utc": datetime.now(timezone.utc).isoformat(),
               "validated_by": "Validador de Modelos Externos (P-03)", "behaviour": behaviour}
-    client.put_object(Bucket=et.PROVENANCE_BUCKET, Key=f"base-models/{artifact_hash}.json",
-                      Body=json.dumps(record, indent=2, ensure_ascii=False).encode("utf-8"))
-    print(f"\nModelo base ACEPTADO. Registro de validación: {et.PROVENANCE_BUCKET}/base-models/{artifact_hash}.json")
+    et.put_signed_record(client, f"base-models/{artifact_hash}.json", record)
+    print(f"\nModelo base ACEPTADO. Registro de validación (firmado por RecoShop): "
+          f"{et.PROVENANCE_BUCKET}/base-models/{artifact_hash}.json")
     return 0
 
 
