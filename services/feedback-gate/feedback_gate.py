@@ -45,6 +45,7 @@ Códigos de salida:
 """
 
 import argparse
+import hashlib
 import json
 import os
 import shutil
@@ -436,12 +437,15 @@ def quarantine_batch(batch_path: str, decision: dict, metrics: dict) -> None:
     print(f"[feedback_gate] Evidencia de la decisión: {reason_path}")
 
 
-def _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signal, decision):
+def _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signal, decision,
+                   cycle_id=None, batch_sha256=None):
     """
-    Registro OPCIONAL de la decisión como un run de MLflow
-    (LOG_TO_MLFLOW=true). Deshabilitado por defecto: esta capa no
-    requiere MLflow para su demostración (a diferencia de las Capas 1 y
-    2, que sí dependen del Model Registry).
+    Registro de la decisión como un run de MLflow. Es OPCIONAL en la demo de
+    la capa (LOG_TO_MLFLOW=true) y OBLIGATORIO dentro de un ciclo de
+    reentrenamiento (--cycle-id): en ese caso el run, etiquetado con el
+    identificador del ciclo, es el canal por el que la Compuerta de Promoción
+    del Modelo Reentrenado recibe la señal del Monitor (almacén de metadatos
+    compartido, componente C7).
     """
     import mlflow  # import diferido: mlflow no es una dependencia dura de esta capa
 
@@ -455,10 +459,19 @@ def _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signa
         mlflow.log_metric("label_manipulation_max_delta", label_signal["max_delta"])
         mlflow.set_tag("decision", decision["decision"])
         mlflow.set_tag("exit_code", str(decision["exit_code"]))
-    print("[feedback_gate] Decisión registrada en MLflow (LOG_TO_MLFLOW=true).")
+        mlflow.set_tag("batch_file", batch_name)
+        if batch_sha256:
+            mlflow.set_tag("batch_sha256", batch_sha256)
+        if cycle_id:
+            mlflow.set_tag("cycle_id", cycle_id)
+        run_id = mlflow.active_run().info.run_id
+    if cycle_id:
+        print(f"[feedback_gate] Decisión registrada en MLflow para el ciclo '{cycle_id}' (run {run_id}).")
+    else:
+        print("[feedback_gate] Decisión registrada en MLflow (LOG_TO_MLFLOW=true).")
 
 
-def run_gate(batch_path: str) -> int:
+def run_gate(batch_path: str, cycle_id: str = None) -> int:
     baseline_path = os.path.join(DATA_DIR, "baseline.csv")
 
     if not os.path.isfile(baseline_path):
@@ -504,7 +517,17 @@ def run_gate(batch_path: str) -> int:
         }
         quarantine_batch(batch_path, decision, metrics)
 
-    if LOG_TO_MLFLOW:
+    if cycle_id:
+        with open(batch_path, "rb") as f:
+            batch_sha256 = hashlib.sha256(f.read()).hexdigest()
+        try:
+            _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signal, decision,
+                           cycle_id=cycle_id, batch_sha256=batch_sha256)
+        except Exception as exc:  # noqa: BLE001 - dentro de un ciclo, sin registro no hay señal
+            raise InfrastructureError(
+                f"no se pudo registrar la decisión del ciclo '{cycle_id}' en MLflow: {exc}"
+            ) from exc
+    elif LOG_TO_MLFLOW:
         try:
             _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signal, decision)
         except Exception as exc:  # noqa: BLE001 - el registro en MLflow es opcional
@@ -516,10 +539,13 @@ def run_gate(batch_path: str) -> int:
 def main():
     parser = argparse.ArgumentParser(description="P-02 Secure Retraining Gate (Capa 3)")
     parser.add_argument("--batch", required=True, help="Ruta al CSV del lote de feedback a evaluar")
+    parser.add_argument("--cycle-id", default=None,
+                        help="Identificador del ciclo de reentrenamiento: registra la decisión en "
+                             "MLflow para la Compuerta de Promoción (obligatorio dentro de un ciclo)")
     args = parser.parse_args()
 
     try:
-        exit_code = run_gate(args.batch)
+        exit_code = run_gate(args.batch, cycle_id=args.cycle_id)
     except InfrastructureError as exc:
         print(f"[feedback_gate] ERROR DE INFRAESTRUCTURA: {exc}", file=sys.stderr)
         sys.exit(2)

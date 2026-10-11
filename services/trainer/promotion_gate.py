@@ -48,6 +48,18 @@ Escenarios de retroalimentación (--feedback):
               a los más populares. Es el escenario de explotación de D-03
               (Model Skewing, ML08) dirigido a una sola subpoblación.
 
+Ciclo de reentrenamiento encadenado (--cycle-id, --register):
+  - La señal del Monitor no se pasa a mano: se lee de MLflow, de los runs que
+    feedback_gate.py registró con la etiqueta del ciclo (almacén de metadatos
+    compartido, componente C7). Cuarentena (exit 4) -> "adversarial"; alerta
+    de drift natural (exit 3) -> "natural"; todo aceptado (exit 0) -> "none".
+  - El modelo vigente no se reentrena: se descarga la última versión del Model
+    Registry y se verifica su firma cosign antes de compararlo.
+  - Con --register, un candidato APROBADO entra al registro por la misma ruta
+    de firma y ML-BOM que train.py (P-03); el ML-BOM declara la
+    retroalimentación y las decisiones de P-02 que la dejaron pasar. Un
+    candidato rechazado o retenido no crea versión nueva.
+
 DECLARACIÓN: datos sintéticos; umbrales calibrados para el prototipo, no
 validados con tráfico real.
 """
@@ -57,6 +69,7 @@ import hashlib
 import json
 import os
 import sys
+import subprocess
 import tempfile
 from datetime import datetime, timezone
 
@@ -176,12 +189,104 @@ def fit_ranker(train_df: pd.DataFrame, eval_df: pd.DataFrame, seed: int) -> lgb.
     return model
 
 
-def model_sha256(model: lgb.LGBMRanker) -> str:
+def model_sha256(model) -> str:
+    """SHA-256 del modelo serializado (LGBMRanker entrenado aquí o Booster del registro)."""
+    if getattr(model, "registry_sha256", None):
+        return model.registry_sha256
     with tempfile.TemporaryDirectory() as tmp_dir:
         path = os.path.join(tmp_dir, "model.txt")
         model.booster_.save_model(path)
         with open(path, "rb") as f:
             return hashlib.sha256(f.read()).hexdigest()
+
+
+# ---------------------------------------------------------------------------
+# Ciclo encadenado: señal del Monitor y modelo vigente desde el registro
+# ---------------------------------------------------------------------------
+
+MONITOR_EXPERIMENT = "recoshop-p02-layer3"
+MLFLOW_MODEL_NAME = os.environ.get("MLFLOW_MODEL_NAME", "recoshop-ranker")
+COSIGN_PUB_PATH = os.environ.get("COSIGN_PUB_PATH", "/keys/cosign.pub")
+SIGNAL_BY_EXIT = {"4": "adversarial", "3": "natural", "0": "none"}
+
+
+def read_monitor_signal(cycle_id: str):
+    """
+    Lee las decisiones que el Monitor de Drift de Seguridad registró en MLflow
+    para el ciclo y las reduce a una señal: basta un lote en cuarentena para
+    que la señal sea adversarial.
+    """
+    from mlflow.tracking import MlflowClient
+    client = MlflowClient()
+    experiment = client.get_experiment_by_name(MONITOR_EXPERIMENT)
+    runs = []
+    if experiment is not None:
+        runs = client.search_runs([experiment.experiment_id], filter_string=f"tags.cycle_id = '{cycle_id}'")
+    if not runs:
+        raise InfrastructureError(
+            f"no hay decisiones del Monitor registradas para el ciclo '{cycle_id}'; "
+            "sin la señal del Monitor la compuerta no decide."
+        )
+    decisions = []
+    for run in sorted(runs, key=lambda r: r.info.start_time):
+        code = run.data.tags.get("exit_code")
+        if code not in SIGNAL_BY_EXIT:
+            raise InfrastructureError(f"decisión del Monitor no reconocida (exit {code}) en el run {run.info.run_id}")
+        decisions.append({
+            "run_id": run.info.run_id,
+            "batch_file": run.data.tags.get("batch_file", run.data.params.get("batch_file", "?")),
+            "batch_sha256": run.data.tags.get("batch_sha256", ""),
+            "decision": run.data.tags.get("decision"),
+            "exit_code": int(code),
+        })
+    codes = {d["exit_code"] for d in decisions}
+    signal = "adversarial" if 4 in codes else ("natural" if 3 in codes else "none")
+    return signal, decisions
+
+
+class RegistryModel:
+    """Modelo vigente cargado del Model Registry, con la interfaz que usa la compuerta."""
+
+    def __init__(self, booster: lgb.Booster, version: str, sha256: str):
+        self.booster = booster
+        self.version = version
+        self.registry_sha256 = sha256
+
+    def predict(self, features: pd.DataFrame):
+        return self.booster.predict(features)
+
+
+def load_current_from_registry() -> RegistryModel:
+    """
+    Descarga la última versión registrada, verifica la firma cosign del
+    artefacto y que su hash coincida con el registrado al firmar. Solo un
+    vigente verificado sirve como referencia de la comparación.
+    """
+    import mlflow
+    from mlflow.tracking import MlflowClient
+    client = MlflowClient()
+    versions = client.search_model_versions(f"name='{MLFLOW_MODEL_NAME}'")
+    if not versions:
+        raise InfrastructureError(f"no hay versiones registradas de '{MLFLOW_MODEL_NAME}'.")
+    latest = max(versions, key=lambda v: int(v.version))
+    tmp_dir = tempfile.mkdtemp()
+    model_path = mlflow.artifacts.download_artifacts(run_id=latest.run_id, artifact_path="model/model.txt", dst_path=tmp_dir)
+    sig_path = mlflow.artifacts.download_artifacts(run_id=latest.run_id, artifact_path="model/model.txt.sig", dst_path=tmp_dir)
+    check = subprocess.run(
+        ["cosign", "verify-blob", "--key", COSIGN_PUB_PATH, "--signature", sig_path,
+         "--insecure-ignore-tlog=true", model_path],
+        capture_output=True, text=True,
+    )
+    with open(model_path, "rb") as f:
+        sha = hashlib.sha256(f.read()).hexdigest()
+    if check.returncode != 0 or sha != latest.tags.get("sha256_at_signing_time"):
+        raise InfrastructureError(
+            f"la versión vigente {latest.version} no supera la verificación de firma; "
+            "no hay una referencia confiable para comparar el candidato."
+        )
+    print(f"[promotion-gate] Modelo vigente: versión {latest.version} del Model Registry, "
+          f"firma verificada (SHA-256 {sha}).")
+    return RegistryModel(lgb.Booster(model_file=model_path), latest.version, sha)
 
 
 def global_ndcg_at_10(model: lgb.LGBMRanker, df: pd.DataFrame) -> float:
@@ -262,7 +367,34 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Compuerta de Promoción del Modelo Reentrenado (P-02)")
     parser.add_argument("--feedback", required=True, choices=["clean", "poisoned"])
     parser.add_argument("--monitor-signal", default="none", choices=["none", "natural", "adversarial"])
+    parser.add_argument("--cycle-id", default=None,
+                        help="Ciclo de reentrenamiento: lee la señal del Monitor de MLflow y compara "
+                             "contra la versión vigente del Model Registry")
+    parser.add_argument("--register", action="store_true",
+                        help="Con --cycle-id: si el candidato se APRUEBA, firmarlo y registrarlo (P-03)")
     args = parser.parse_args()
+    if args.register and not args.cycle_id:
+        print("[promotion-gate] --register exige --cycle-id.")
+        return 2
+
+    monitor_decisions = []
+    current_from_registry = None
+    if args.cycle_id:
+        import mlflow
+        mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
+        try:
+            args.monitor_signal, monitor_decisions = read_monitor_signal(args.cycle_id)
+            print(f"[promotion-gate] Ciclo '{args.cycle_id}': decisiones del Monitor leídas de MLflow:")
+            for d in monitor_decisions:
+                print(f"  {d['batch_file']}: {d['decision']} (exit {d['exit_code']}, run {d['run_id']})")
+            print(f"[promotion-gate] Señal del Monitor derivada: {args.monitor_signal}")
+            current_from_registry = load_current_from_registry()
+        except InfrastructureError as exc:
+            print(f"[promotion-gate] ERROR: {exc}")
+            return 2
+        except Exception as exc:  # noqa: BLE001
+            print(f"[promotion-gate] ERROR DE INFRAESTRUCTURA consultando MLflow: {exc}")
+            return 2
 
     try:
         corpus = generate_recoshop_dataset(seed=CURRENT_MODEL_SEED)
@@ -278,8 +410,11 @@ def main() -> int:
     print(f"[promotion-gate] Conjunto canónico de seguridad: {canonical['session_id'].nunique()} sesiones, "
           f"{len(canonical)} filas, SHA-256 {sha256_of_dataframe(canonical)}")
 
-    current = fit_ranker(train_df, eval_df, CURRENT_MODEL_SEED)
-    print(f"[promotion-gate] Modelo vigente (semilla {CURRENT_MODEL_SEED}): SHA-256 {model_sha256(current)}")
+    if current_from_registry is not None:
+        current = current_from_registry
+    else:
+        current = fit_ranker(train_df, eval_df, CURRENT_MODEL_SEED)
+        print(f"[promotion-gate] Modelo vigente (semilla {CURRENT_MODEL_SEED}): SHA-256 {model_sha256(current)}")
 
     retrain_df = pd.concat([train_df, feedback], ignore_index=True).sort_values("session_id")
     candidate = fit_ranker(retrain_df, eval_df, CURRENT_MODEL_SEED)
@@ -348,6 +483,49 @@ def main() -> int:
     print(f"  Regla: {rule}")
     if code != 0:
         print("  El candidato NO se promueve: el modelo vigente sigue en producción.")
+    if args.cycle_id:
+        audit["cycle"] = {
+            "cycle_id": args.cycle_id,
+            "monitor_decisions": monitor_decisions,
+            "current_model_version": current.version,
+        }
+
+    if args.register:
+        if code == 0:
+            from train import describe_provenance, sign_and_register
+            print("")
+            print("[promotion-gate] Candidato APROBADO: se firma y se registra por la ruta de P-03.")
+            mlflow.set_experiment("recoshop-p02-promotion")
+            base_hash = sha256_of_dataframe(corpus)
+            provenance, provenance_status = describe_provenance(base_hash, log_tag="promotion-gate")
+            version, run_id, _ = sign_and_register(
+                model=candidate,
+                ndcg_at_10=global_ndcg_at_10(candidate, eval_df),
+                n_train_sessions=int(retrain_df["session_id"].nunique()),
+                n_eval_sessions=int(eval_df["session_id"].nunique()),
+                dataset_df=corpus, dataset_hash=base_hash,
+                provenance=provenance, provenance_status=provenance_status,
+                random_seed=CURRENT_MODEL_SEED,
+                retraining={
+                    "cycle_id": args.cycle_id,
+                    "feedback_sha256": sha256_of_dataframe(feedback),
+                    "feedback_rows": len(feedback),
+                    "feedback_sessions": int(feedback["session_id"].nunique()),
+                    "monitor_signal": args.monitor_signal,
+                    "monitor": monitor_decisions,
+                    "promotion_decision": f"{decision} (exit {code})",
+                    "canonical_set_sha256": sha256_of_dataframe(canonical),
+                    "previous_version": current.version,
+                    "previous_model_sha256": model_sha256(current),
+                },
+                log_tag="promotion-gate",
+            )
+            audit["cycle"]["registered_version"] = version
+            audit["cycle"]["registered_run_id"] = run_id
+        else:
+            print(f"[promotion-gate] No se registra una versión nueva: la versión {current.version} "
+                  "sigue vigente en el Model Registry.")
+
     print("[promotion-gate] Registro de auditoría:")
     print(json.dumps(audit, indent=2, ensure_ascii=False))
     return code

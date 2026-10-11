@@ -32,6 +32,7 @@ MLBOM_SCHEMA = "http://cyclonedx.org/schema/bom-1.7.schema.json"
 
 MODEL_BOM_REF = "model-recoshop-ranker"
 DATASET_BOM_REF = "dataset-recoshop-synthetic-sessions"
+FEEDBACK_BOM_REF = "dataset-recoshop-retraining-feedback"
 
 # Dependencias de software que determinan el comportamiento del modelo.
 TRACKED_LIBRARIES = ["lightgbm", "scikit-learn", "numpy", "pandas", "mlflow"]
@@ -82,6 +83,47 @@ def _provenance_properties(provenance, status):
     ]
 
 
+def _feedback_component(retraining: dict) -> dict:
+    """
+    Componente de datos para la retroalimentación con la que se reentrenó un
+    modelo promovido por la Compuerta de Promoción (P-02). Declara las
+    decisiones de P-02 que la dejaron pasar, de modo que el ML-BOM firmado
+    (P-03) conserve el vínculo entre el modelo y el ciclo de reentrenamiento.
+    """
+    monitor = retraining["monitor"]
+    props = [
+        {"name": "recoshop:retraining:cycle_id", "value": retraining["cycle_id"]},
+        {"name": "recoshop:retraining:monitor_signal", "value": retraining["monitor_signal"]},
+        {"name": "recoshop:retraining:monitor_decisions",
+         "value": "; ".join(f"{m['batch_file']}={m['decision']} (exit {m['exit_code']})" for m in monitor)},
+        {"name": "recoshop:retraining:monitor_runs", "value": ",".join(m["run_id"] for m in monitor)},
+        {"name": "recoshop:retraining:promotion_decision", "value": retraining["promotion_decision"]},
+        {"name": "recoshop:retraining:canonical_set_sha256", "value": retraining["canonical_set_sha256"]},
+        {"name": "recoshop:retraining:previous_model_version", "value": str(retraining["previous_version"])},
+        {"name": "recoshop:retraining:previous_model_sha256", "value": retraining["previous_model_sha256"]},
+    ]
+    return {
+        "type": "data",
+        "bom-ref": FEEDBACK_BOM_REF,
+        "name": "recoshop-retraining-feedback",
+        "version": retraining["cycle_id"],
+        "hashes": [{"alg": "SHA-256", "content": retraining["feedback_sha256"]}],
+        "data": [
+            {
+                "type": "dataset",
+                "name": "recoshop-retraining-feedback",
+                "description": (
+                    f"Retroalimentación del ciclo {retraining['cycle_id']} "
+                    f"({retraining['feedback_rows']} filas, {retraining['feedback_sessions']} sesiones), "
+                    "aprobada por la Compuerta de Promoción del Modelo Reentrenado (P-02)."
+                ),
+                "classification": "sintético, sin datos personales",
+            }
+        ],
+        "properties": props,
+    }
+
+
 def build_mlbom(
     *,
     model_name: str,
@@ -96,6 +138,7 @@ def build_mlbom(
     n_eval_sessions: int,
     provenance: dict = None,
     provenance_status: str = "sin-registro",
+    retraining: dict = None,
 ) -> dict:
     """Retorna el ML-BOM como diccionario listo para serializar a JSON."""
     libraries = _library_components()
@@ -116,7 +159,8 @@ def build_mlbom(
                 "task": "ranking",
                 "architectureFamily": "gradient boosted decision trees",
                 "modelArchitecture": "LightGBM LGBMRanker (objetivo lambdarank)",
-                "datasets": [{"ref": DATASET_BOM_REF}],
+                "datasets": [{"ref": DATASET_BOM_REF}]
+                + ([{"ref": FEEDBACK_BOM_REF}] if retraining else []),
                 "inputs": [{"format": "tabular: " + ", ".join(feature_columns)}],
                 "outputs": [{"format": "puntaje de relevancia por candidato (ranking)"}],
             },
@@ -180,11 +224,13 @@ def build_mlbom(
                 ]
             },
         },
-        "components": [model_component, dataset_component, *libraries],
+        "components": [model_component, dataset_component,
+                       *([_feedback_component(retraining)] if retraining else []), *libraries],
         "dependencies": [
             {
                 "ref": MODEL_BOM_REF,
-                "dependsOn": [DATASET_BOM_REF, *[lib["bom-ref"] for lib in libraries]],
+                "dependsOn": [DATASET_BOM_REF, *([FEEDBACK_BOM_REF] if retraining else []),
+                              *[lib["bom-ref"] for lib in libraries]],
             }
         ],
     }

@@ -38,6 +38,7 @@ DEMOS=(
   "capa3_sensibilidad_amplitud_baja|run_layer3_seeds_low_amplitude.sh"
   "capa3_compuerta_promocion|run_layer3_promotion_demo.sh"
   "capa3_compuerta_promocion_6semillas|run_layer3_promotion_seeds.sh"
+  "integracion_tres_capas|run_e2e_demo.sh"
 )
 
 # --- Procedencia común a todos los logs ---

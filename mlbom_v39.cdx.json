@@ -1,0 +1,184 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.7",
+  "serialNumber": "urn:uuid:07494a53-ccb7-5bee-a21c-21b85f129105",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-10-10T00:10:39Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "recoshop-trainer",
+          "description": "Pipeline de entrenamiento del prototipo RecoShop (P-03)"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "machine-learning-model",
+      "bom-ref": "model-recoshop-ranker",
+      "name": "recoshop-ranker",
+      "version": "81f13376a6ca4aeaabf9fdf5ba69742c",
+      "description": "Modelo de ranking de productos del caso de estudio RecoShop (sistema de recomendación e-commerce ficticio).",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c"
+        }
+      ],
+      "modelCard": {
+        "modelParameters": {
+          "approach": {
+            "type": "supervised"
+          },
+          "task": "ranking",
+          "architectureFamily": "gradient boosted decision trees",
+          "modelArchitecture": "LightGBM LGBMRanker (objetivo lambdarank)",
+          "datasets": [
+            {
+              "ref": "dataset-recoshop-synthetic-sessions"
+            }
+          ],
+          "inputs": [
+            {
+              "format": "tabular: category, price, user_purchase_history, product_popularity, discount_pct, is_weekend"
+            }
+          ],
+          "outputs": [
+            {
+              "format": "puntaje de relevancia por candidato (ranking)"
+            }
+          ]
+        },
+        "quantitativeAnalysis": {
+          "performanceMetrics": [
+            {
+              "type": "NDCG@10",
+              "value": "0.8818",
+              "slice": "conjunto de evaluación (60 sesiones)"
+            }
+          ]
+        }
+      },
+      "properties": [
+        {
+          "name": "recoshop:mlflow_run_id",
+          "value": "81f13376a6ca4aeaabf9fdf5ba69742c"
+        },
+        {
+          "name": "recoshop:random_seed",
+          "value": "42"
+        },
+        {
+          "name": "recoshop:n_train_sessions",
+          "value": "240"
+        },
+        {
+          "name": "recoshop:signature",
+          "value": "cosign sign-blob (clave ECDSA local, sin Rekor)"
+        }
+      ]
+    },
+    {
+      "type": "data",
+      "bom-ref": "dataset-recoshop-synthetic-sessions",
+      "name": "recoshop-synthetic-sessions",
+      "version": "seed-42",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d"
+        }
+      ],
+      "data": [
+        {
+          "type": "dataset",
+          "name": "recoshop-synthetic-sessions",
+          "description": "Sesiones sintéticas de navegación e-commerce (3916 filas), generadas de forma determinista con semilla 42.",
+          "classification": "sintético, sin datos personales"
+        }
+      ],
+      "properties": [
+        {
+          "name": "recoshop:provenance:status",
+          "value": "verificada"
+        },
+        {
+          "name": "recoshop:provenance:source",
+          "value": "recoshop-commerce-api"
+        },
+        {
+          "name": "recoshop:provenance:endpoint",
+          "value": "/export/events"
+        },
+        {
+          "name": "recoshop:provenance:exported_at",
+          "value": "2026-10-10T00:05:05.674505+00:00"
+        },
+        {
+          "name": "recoshop:provenance:accepted_at",
+          "value": "2026-10-10T00:05:06.934577+00:00"
+        },
+        {
+          "name": "recoshop:provenance:manifest_sha256",
+          "value": "19b6aed1f35a75854e3ef40f796dabaad1e75060931ec1479e60a782b3355af8"
+        },
+        {
+          "name": "recoshop:provenance:record",
+          "value": "s3://recoshop-provenance/datasets/afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d.json"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/lightgbm@4.3.0",
+      "name": "lightgbm",
+      "version": "4.3.0",
+      "purl": "pkg:pypi/lightgbm@4.3.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/scikit-learn@1.4.0",
+      "name": "scikit-learn",
+      "version": "1.4.0",
+      "purl": "pkg:pypi/scikit-learn@1.4.0"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/numpy@1.26.3",
+      "name": "numpy",
+      "version": "1.26.3",
+      "purl": "pkg:pypi/numpy@1.26.3"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/pandas@2.1.4",
+      "name": "pandas",
+      "version": "2.1.4",
+      "purl": "pkg:pypi/pandas@2.1.4"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:pypi/mlflow@2.9.2",
+      "name": "mlflow",
+      "version": "2.9.2",
+      "purl": "pkg:pypi/mlflow@2.9.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "model-recoshop-ranker",
+      "dependsOn": [
+        "dataset-recoshop-synthetic-sessions",
+        "pkg:pypi/lightgbm@4.3.0",
+        "pkg:pypi/scikit-learn@1.4.0",
+        "pkg:pypi/numpy@1.26.3",
+        "pkg:pypi/pandas@2.1.4",
+        "pkg:pypi/mlflow@2.9.2"
+      ]
+    }
+  ]
+}

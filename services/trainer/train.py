@@ -138,35 +138,29 @@ def train_and_evaluate():
     return model, mean_ndcg_at_10, len(train_sessions), len(eval_sessions), df
 
 
-def main():
-    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
-    mlflow.set_experiment("recoshop-p03-layer1")
-
-    model, ndcg_at_10, n_train_sessions, n_eval_sessions, dataset_df = train_and_evaluate()
-    dataset_hash = sha256_of_dataframe(dataset_df)
-    print(f"[train] SHA-256 del dataset de entrenamiento: {dataset_hash}")
-    provenance, provenance_status = lookup_provenance(dataset_hash)
-    if provenance:
-        print(f"[train] Procedencia del dataset: VERIFICADA (fuente {provenance['source']}, "
-              f"aceptado {provenance['accepted_at_utc']} por la Compuerta de Procedencia; "
-              "registro firmado por RecoShop)")
-    else:
-        reason = {
-            "sin-registro": "sin registro de la Compuerta de Procedencia",
-            "firma-invalida": "el registro no tiene firma válida de RecoShop",
-            "sin-acceso": "no fue posible consultar el almacén de procedencia",
-        }[provenance_status]
-        print(f"[train] Procedencia del dataset: NO VERIFICADA ({reason})")
-
+def sign_and_register(*, model, ndcg_at_10, n_train_sessions, n_eval_sessions,
+                      dataset_df, dataset_hash, provenance, provenance_status,
+                      random_seed=RANDOM_SEED, retraining=None, log_tag="train"):
+    """
+    Firma el modelo y su ML-BOM y registra una versión NUEVA en el Model
+    Registry (Flujo C de P-03). La usan train.py y la Compuerta de Promoción
+    del Modelo Reentrenado (promotion_gate.py --register), de modo que un
+    modelo reentrenado entra al registro por la misma ruta de firma que el
+    entrenamiento inicial. `retraining` describe la retroalimentación que
+    aprobó P-02 y se declara en el ML-BOM. Retorna (versión, run_id, sha256).
+    """
     with mlflow.start_run() as run:
         run_id = run.info.run_id
-        print(f"[train] MLflow run_id: {run_id}")
+        print(f"[{log_tag}] MLflow run_id: {run_id}")
 
-        mlflow.log_param("random_seed", RANDOM_SEED)
+        mlflow.log_param("random_seed", random_seed)
         mlflow.log_param("n_train_sessions", n_train_sessions)
         mlflow.log_param("n_eval_sessions", n_eval_sessions)
         mlflow.log_param("features", ",".join(FEATURE_COLUMNS))
         mlflow.log_metric("ndcg_at_10", ndcg_at_10)
+        if retraining:
+            mlflow.set_tag("origin", "promotion-gate")
+            mlflow.set_tag("retraining_cycle_id", retraining["cycle_id"])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             model_path = os.path.join(tmp_dir, "model.txt")
@@ -181,7 +175,7 @@ def main():
             model.booster_.save_model(model_path)
 
             artifact_hash_before_signing = sha256_of_file(model_path)
-            print(f"[train] SHA-256 del artefacto (antes de firmar): {artifact_hash_before_signing}")
+            print(f"[{log_tag}] SHA-256 del artefacto (antes de firmar): {artifact_hash_before_signing}")
 
             # --- Firma del artefacto: sub-componente Artifact Signing and
             # --- Registry Gate de P-03, mitigación de D-01. ---
@@ -205,16 +199,17 @@ def main():
                 n_dataset_rows=len(dataset_df),
                 feature_columns=FEATURE_COLUMNS,
                 ndcg_at_10=ndcg_at_10,
-                random_seed=RANDOM_SEED,
+                random_seed=random_seed,
                 n_train_sessions=n_train_sessions,
                 n_eval_sessions=n_eval_sessions,
                 provenance=provenance,
                 provenance_status=provenance_status,
+                retraining=retraining,
             )
             with open(mlbom_path, "w", encoding="utf-8") as f:
                 json.dump(bom, f, indent=2, ensure_ascii=False)
             mlbom_hash = sha256_of_file(mlbom_path)
-            print(f"[train] ML-BOM generado (CycloneDX {bom['specVersion']}): SHA-256 {mlbom_hash}")
+            print(f"[{log_tag}] ML-BOM generado (CycloneDX {bom['specVersion']}): SHA-256 {mlbom_hash}")
 
             try:
                 sign_artifact(
@@ -235,7 +230,7 @@ def main():
                 "mlbom_sha256": mlbom_hash,
                 "mlbom_format": f"CycloneDX {bom['specVersion']} (ECMA-424)",
                 "signature_algorithm": "cosign (par de claves ECDSA local, sin Rekor)",
-                "random_seed": RANDOM_SEED,
+                "random_seed": random_seed,
                 "note": (
                     "Este hash corresponde al artefacto EN EL MOMENTO DE LA FIRMA. "
                     "El deployment-gate recalcula el hash del artefacto descargado "
@@ -243,6 +238,9 @@ def main():
                     "cosign verify-blob."
                 ),
             }
+            if retraining:
+                metadata["retraining_cycle_id"] = retraining["cycle_id"]
+                metadata["feedback_sha256"] = retraining["feedback_sha256"]
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(metadata, f, indent=2, ensure_ascii=False)
 
@@ -253,9 +251,9 @@ def main():
             mlflow.log_artifacts(tmp_dir, artifact_path="model")
 
         # Registrar una NUEVA versión del modelo en el Model Registry. Cada
-        # ejecución de train.py crea una versión nueva (nunca sobrescribe
-        # una versión existente), coherente con la política de
-        # inmutabilidad lógica ("append-only") del patrón P-03.
+        # registro crea una versión nueva (nunca sobrescribe una versión
+        # existente), coherente con la política de inmutabilidad lógica
+        # ("append-only") del patrón P-03.
         model_uri = f"runs:/{run_id}/model"
         try:
             registered_model = mlflow.register_model(model_uri=model_uri, name=MLFLOW_MODEL_NAME)
@@ -264,41 +262,70 @@ def main():
             raise SystemExit(1)
 
         client = MlflowClient()
-        client.set_model_version_tag(
-            name=MLFLOW_MODEL_NAME,
-            version=registered_model.version,
-            key="signed_with_cosign",
-            value="true",
-        )
-        client.set_model_version_tag(
-            name=MLFLOW_MODEL_NAME,
-            version=registered_model.version,
-            key="sha256_at_signing_time",
-            value=artifact_hash_before_signing,
-        )
-        client.set_model_version_tag(
-            name=MLFLOW_MODEL_NAME,
-            version=registered_model.version,
-            key="mlbom_sha256",
-            value=mlbom_hash,
-        )
+        tags = {
+            "signed_with_cosign": "true",
+            "sha256_at_signing_time": artifact_hash_before_signing,
+            "mlbom_sha256": mlbom_hash,
+        }
+        if retraining:
+            tags["origin"] = "promotion-gate"
+            tags["retraining_cycle_id"] = retraining["cycle_id"]
+        for key, value in tags.items():
+            client.set_model_version_tag(
+                name=MLFLOW_MODEL_NAME, version=registered_model.version, key=key, value=value,
+            )
 
         print(
-            f"[train] Modelo registrado: '{MLFLOW_MODEL_NAME}' versión "
+            f"[{log_tag}] Modelo registrado: '{MLFLOW_MODEL_NAME}' versión "
             f"{registered_model.version} (run_id={run_id})."
         )
         print(
-            "[train] El modelo fue firmado ANTES de registrarse en MLflow, "
+            f"[{log_tag}] El modelo fue firmado ANTES de registrarse en MLflow, "
             "conforme al sub-componente Artifact Signing and Registry Gate de P-03."
         )
         print(
-            "[train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma "
+            f"[{log_tag}] El ML-BOM (documento de enlace de P-03) fue firmado con la misma "
             "clave y registrado junto al modelo."
         )
-        print(
-            f"[train] Consulta el run en la UI de MLflow: "
-            f"{os.environ.get('MLFLOW_TRACKING_URI', 'http://mlflow:5000')}"
-        )
+        return registered_model.version, run_id, artifact_hash_before_signing
+
+
+def describe_provenance(dataset_hash, log_tag="train"):
+    """Consulta y anuncia la procedencia del dataset base. Retorna (registro, estado)."""
+    provenance, provenance_status = lookup_provenance(dataset_hash)
+    if provenance:
+        print(f"[{log_tag}] Procedencia del dataset: VERIFICADA (fuente {provenance['source']}, "
+              f"aceptado {provenance['accepted_at_utc']} por la Compuerta de Procedencia; "
+              "registro firmado por RecoShop)")
+    else:
+        reason = {
+            "sin-registro": "sin registro de la Compuerta de Procedencia",
+            "firma-invalida": "el registro no tiene firma válida de RecoShop",
+            "sin-acceso": "no fue posible consultar el almacén de procedencia",
+        }[provenance_status]
+        print(f"[{log_tag}] Procedencia del dataset: NO VERIFICADA ({reason})")
+    return provenance, provenance_status
+
+
+def main():
+    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
+    mlflow.set_experiment("recoshop-p03-layer1")
+
+    model, ndcg_at_10, n_train_sessions, n_eval_sessions, dataset_df = train_and_evaluate()
+    dataset_hash = sha256_of_dataframe(dataset_df)
+    print(f"[train] SHA-256 del dataset de entrenamiento: {dataset_hash}")
+    provenance, provenance_status = describe_provenance(dataset_hash)
+
+    sign_and_register(
+        model=model, ndcg_at_10=ndcg_at_10,
+        n_train_sessions=n_train_sessions, n_eval_sessions=n_eval_sessions,
+        dataset_df=dataset_df, dataset_hash=dataset_hash,
+        provenance=provenance, provenance_status=provenance_status,
+    )
+    print(
+        f"[train] Consulta el run en la UI de MLflow: "
+        f"{os.environ.get('MLFLOW_TRACKING_URI', 'http://mlflow:5000')}"
+    )
 
 
 if __name__ == "__main__":

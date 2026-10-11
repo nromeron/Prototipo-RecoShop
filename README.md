@@ -401,12 +401,41 @@ veredictos** coinciden con lo esperado: la caída en la categoría 3 va de 0.055
 a 0.081 con la retroalimentación envenenada, y con la limpia esa categoría
 varía entre −0.003 y +0.015.
 
+### Integración de las tres capas
+
+Las demos anteriores ejercitan cada patrón por separado. `run_e2e_demo.sh`
+los encadena en un mismo ciclo de reentrenamiento, y cada decisión sale del
+componente anterior, no de un parámetro del script:
+
+- El **Monitor** registra su decisión en MLflow con la etiqueta del ciclo
+  (`feedback_gate.py --cycle-id`).
+- La **Compuerta de Promoción** lee esa señal de MLflow y compara el candidato
+  con la **versión vigente del Model Registry**, cuya firma verifica antes de
+  usarla como referencia (`promotion_gate.py --cycle-id --register`).
+- Un candidato **aprobado** entra al registro por la misma ruta de firma y
+  ML-BOM que `train.py` (P-03). El ML-BOM declara la retroalimentación como un
+  segundo conjunto de datos, con las decisiones de P-02 que la dejaron pasar
+  (`recoshop:retraining:*`).
+- La **compuerta de despliegue** y la **pasarela** verifican la versión nueva
+  como cualquier otra.
+
+| Escenario | Cadena | Resultado |
+|---|---|---|
+| Ciclo adversarial | Monitor: cuarentena · Compuerta de Promoción: rechazado | no se crea versión; la vigente se despliega |
+| Ciclo legítimo | Monitor: aceptado · Compuerta de Promoción: aprobado | versión nueva firmada → despliegue → la pasarela la sirve → respuesta firmada |
+| Fallo en cascada | el modelo promovido se altera después de la firma | la compuerta de despliegue lo rechaza y la pasarela no arranca |
+
+Los lotes del Monitor no tienen sesiones y no sirven para reentrenar un
+modelo de ranking; el reentrenamiento usa la retroalimentación por sesiones de
+la Compuerta de Promoción. Las dos piezas se conectan por el contrato de
+códigos de salida, registrado en MLflow, no por el mismo archivo de datos.
+
 ---
 
 ## Evidencia reproducible
 
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
-las doce demostraciones y guarda cada salida en [`evidence/`](evidence/) con
+las trece demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
 identificadores de imagen), un resumen y un manifiesto SHA-256:
 
@@ -428,6 +457,7 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 | Capa 3 · frontera (+5 %, +0.03) | ✅ alerta natural 3/6 · limpio y adversarial 6/6 |
 | Capa 3 · Compuerta de Promoción | ✅ 0 / 4 / 1 / 4 |
 | Capa 3 · Compuerta de Promoción, sensibilidad | ✅ 12/12 |
+| Integración · ciclo de reentrenamiento con las tres capas | ✅ 12/12 pasos |
 
 El pipeline es determinista: con la misma semilla, el dataset y el modelo
 producen el mismo hash en cada entrenamiento
@@ -467,6 +497,9 @@ chmod +x scripts/*.sh
 ./scripts/run_layer3_promotion_demo.sh
 ./scripts/run_layer3_promotion_seeds.sh
 
+# Integración de las tres capas
+./scripts/run_e2e_demo.sh
+
 # O todo junto, con evidencia
 ./scripts/capture_evidence.sh
 ```
@@ -495,7 +528,8 @@ entorno, y los scripts lo reportan por separado.
 ├── docker-compose.yml           stack único: las tres capas comparten red, registry y claves
 ├── keys/                        claves generadas localmente (nunca se versionan)
 ├── evidence/                    logs de ejecución, resumen y manifiesto SHA-256
-├── scripts/                     un orquestador por demo + captura de evidencia
+├── scripts/                     un orquestador por demo, la integración de las tres capas
+│                                y la captura de evidencia
 └── services/
     ├── mlflow/                  Tracking + Model Registry
     ├── trainer/                 procedencia, modelos externos, entrenamiento, firma, ML-BOM,
@@ -545,9 +579,11 @@ producción:
   vez. El escaneo del artefacto sigue el principio de ModelScan (inspeccionar
   las importaciones del pickle sin cargarlo) sin usar la herramienta, y el
   entorno aislado es el propio contenedor `trainer`, sin bloqueo de red.
-- **P-02** implementa sus tres sub-componentes. La señal del Monitor llega a
-  la Compuerta de Promoción como argumento del script, no por un canal
-  compartido en ejecución.
+- **P-02** implementa sus tres sub-componentes. En la demo de la capa, la
+  señal del Monitor llega a la Compuerta de Promoción como argumento del
+  script; en la demo de integración llega por MLflow. Los lotes del Monitor no
+  tienen sesiones, así que el reentrenamiento usa la retroalimentación de la
+  Compuerta: las dos piezas comparten el contrato de decisiones, no los datos.
 
 <details>
 <summary><b>Notas de reproducibilidad</b> — hallazgos de la validación en runtime</summary>
