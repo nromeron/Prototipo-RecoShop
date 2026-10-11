@@ -59,7 +59,7 @@ Tres patrones integrados cubren las siete:
 
 | Patrón | Qué hace | Debilidades |
 |---|---|---|
-| **P-01** Secure Inference Gateway | Valida lo que entra al modelo, controla lo que sale y firma cada respuesta | D-02, D-04, D-05 |
+| **P-01** Secure Inference Gateway | Autentica al cliente, valida lo que entra al modelo, controla lo que sale y firma cada respuesta | D-02, D-04, D-05 |
 | **P-02** Secure Retraining Gate | Distingue el drift natural de la manipulación adversarial antes de reentrenar | D-03 (y la variante de feedback de D-07) |
 | **P-03** Trusted ML Artifact Pipeline | Garantiza la procedencia e integridad de datos, modelos base y artefactos | D-01, D-06, D-07 |
 
@@ -114,7 +114,7 @@ flowchart TB
     TRAINER -- "registra modelo + ML-BOM firmados" --> MLFLOW
     GATE -- "verifica antes de aprobar" --> MLFLOW
     GW -- "verifica firma y ML-BOM al arrancar" --> MLFLOW
-    CLIENT -- "POST /v1/recommend" --> GW
+    CLIENT -- "POST /v1/recommend (mTLS)" --> GW
     FB -. "señal del Monitor" .-> PG
     KEYS -.-> TRAINER
     KEYS -.-> GATE
@@ -260,7 +260,10 @@ región estrecha; los disparadores conjuntivos o distribuidos quedan fuera.
 acepta cualquier entrada, expone más información de la necesaria y entrega
 respuestas que nadie puede verificar.
 
-Un gateway **FastAPI** con tres sub-componentes coordinados:
+Un gateway **FastAPI** con tres sub-componentes coordinados. Solo acepta
+conexiones con **autenticación mutua TLS**: el cliente presenta un
+certificado emitido por la CA del prototipo y su identidad es el CN de ese
+certificado, no un campo que él mismo declara.
 
 - **Input Validator** — esquema [Pandera](https://pandera.readthedocs.io/)
   con tipos y rangos por feature (por ejemplo, `price` en (0, 10000),
@@ -270,8 +273,10 @@ Un gateway **FastAPI** con tres sub-componentes coordinados:
 - **Output Controller** — devuelve solo `product_id` y posición del
   *top-k*, **sin scores crudos** (que facilitarían la extracción del modelo),
   y limita la tasa por cliente con un *token bucket*.
-- **Response Signer** — firma cada respuesta con **Ed25519** sobre su JSON
-  canónico, para que el cliente detecte cualquier manipulación en tránsito.
+- **Protector del Canal** — autenticación mutua TLS, que establece la
+  identidad del cliente (sin certificado válido, el canal no se establece), y
+  firma de cada respuesta con **Ed25519** sobre su JSON canónico, para que el
+  cliente detecte cualquier manipulación en tránsito.
 
 Los tres sub-componentes **comparten un registro de sospecha por cliente**
 (endurecimiento cruzado). Cada entrada rechazada suma 0.3 y cada exceso de
@@ -301,6 +306,9 @@ integración P-03 → P-01, defensa en profundidad entre patrones.
 | `rate-limit` | 429 dentro de la ráfaga |
 | `cross-hardening` | cliente limpio: precio 5000 → 200 con 5 recomendaciones · cliente con 2 rechazos: precio 5000 → 422 (perfil de referencia) y solicitud normal → 200 con 3 recomendaciones firmadas |
 | `tampered-response` | payload alterado → firma inválida, detectado |
+| `no-client-cert` | conexión sin certificado de cliente → el canal TLS no se establece |
+| `untrusted-cert` | certificado de una CA ajena → el canal TLS no se establece |
+| `identity-rotation` | tres `client_id` declarados distintos con el mismo certificado → un solo estado; tras 2 rechazos, 3 recomendaciones firmadas para la identidad del certificado |
 
 ### Capa 3 · P-02 Secure Retraining Gate
 
@@ -450,7 +458,7 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 | Capa 1 · caso positivo | ✅ aprobado |
 | Capa 1 · bytes alterados | ✅ rechazado |
 | Capa 1 · sustitución firmada | ✅ rechazado |
-| Capa 2 · 5 casos del cliente | ✅ 5/5 |
+| Capa 2 · 8 casos del cliente | ✅ 8/8 |
 | Capa 2 · arranque ante sustitución firmada | ✅ el gateway no arranca |
 | Capa 3 · demo con semilla 42 | ✅ 0 / 3 / 4 |
 | Capa 3 · sensibilidad | ✅ 18/18 |
@@ -478,6 +486,7 @@ chmod +x scripts/*.sh
 # Claves (una sola vez)
 ./scripts/generate_keys.sh              # cosign: firma de modelos y ML-BOM
 ./scripts/generate_response_keys.sh     # Ed25519: firma de respuestas
+./scripts/generate_tls_certs.sh         # mTLS: CA, pasarela y clientes
 
 # Capa 1 · P-03
 ./scripts/run_layer1_provenance_demo.sh
@@ -535,8 +544,8 @@ entorno, y los scripts lo reportan por separado.
     ├── trainer/                 procedencia, modelos externos, entrenamiento, firma, ML-BOM,
     │                            ataques y Compuerta de Promoción
     ├── deployment-gate/         controles C1–C3 antes de aprobar un despliegue
-    ├── inference-gateway/       P-01: validador, controlador de salida, firmante y registro de sospecha
-    ├── inference-client/        cliente verificador con los 5 casos
+    ├── inference-gateway/       P-01: mTLS, validador, controlador de salida, firmante y registro de sospecha
+    ├── inference-client/        cliente verificador con los 8 casos
     └── feedback-gate/           P-02: Guardián, Monitor y cuarentena
 ```
 
@@ -547,6 +556,9 @@ entorno, y los scripts lo reportan por separado.
 - **Evaluar y reportar todos los controles**, aunque uno ya haya fallado. La
   evidencia muestra qué control detectó cada ataque, y eso es lo que permite
   demostrar que C2 aporta algo que C3 no.
+- **Identidad desde el certificado.** El límite de tasa y la sospecha siguen
+  a la identidad autenticada por mTLS; un `client_id` declarado se ignora,
+  así que cambiarlo no reinicia el estado del cliente.
 - **Fail-closed en el gateway.** Si no puede verificar el modelo y su
   vínculo con el ML-BOM, no arranca.
 - **Endurecimiento cruzado con decaimiento.** La sospecha se acumula por
@@ -571,6 +583,9 @@ producción:
   (*low-and-slow*) queda fuera del alcance de un detector por lote.
 - Firma con claves locales y **sin registro de transparencia** (Rekor). En
   producción, las claves vivirían en un KMS con rotación y revocación.
+- **mTLS con una CA local.** Los certificados de cliente los emite una CA del
+  prototipo, sin revocación; en producción, la identidad la daría la PKI de
+  la malla de servicios (por ejemplo, Istio) o un proveedor de identidad.
 - **P-03** implementa sus tres sub-componentes y el ML-BOM. Los terceros (socio y
   proveedor) se simulan en el mismo MinIO, con claves propias. El prototipo
   entrena desde cero: el modelo base validado no se usa como punto de

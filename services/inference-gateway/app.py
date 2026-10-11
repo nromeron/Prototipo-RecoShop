@@ -8,8 +8,9 @@ sub-componentes del patrón:
   1. input_validator.py  -- Validador de Entrada (mitigación de D-04)
   2. output_controller.py -- Controlador de Información de Salida,
      incluye top-k limiting y rate limiting (mitigación de D-02)
-  3. response_signer.py  -- Protector del Canal / Response Signer
-     (mitigación de D-05)
+  3. Protector del Canal (mitigación de D-05): autenticación mutua TLS
+     (mtls.py), con la identidad del cliente tomada de su certificado, y
+     firma Ed25519 de cada respuesta (response_signer.py)
 
 PUNTO DE INTEGRACIÓN CON LA CAPA 1 (P-03): al arrancar, este servicio NO
 confía en ningún artefacto local. Descarga el modelo y su firma
@@ -27,6 +28,12 @@ modelo descargado coincida con el que el ML-BOM declara. Así la pasarela
 rechaza también la sustitución por un modelo legítimamente firmado de otra
 versión, igual que la compuerta de despliegue.
 
+IDENTIDAD DEL CLIENTE: la pasarela solo acepta conexiones TLS con un
+certificado de cliente emitido por la CA del prototipo (CERT_REQUIRED). El
+identificador del cliente es el CN de ese certificado; el campo `client_id`
+del cuerpo, si llega, se ignora. Así el límite de tasa y la sospecha siguen
+al cliente autenticado y no a un identificador que él mismo declara.
+
 ENDURECIMIENTO CRUZADO: los sub-componentes comparten un registro de
 sospecha por cliente (suspicion.py). Los rechazos del Validador y los
 excesos de tasa del Controlador elevan la puntuación del cliente; por
@@ -41,19 +48,21 @@ import json
 import logging
 import os
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
-from typing import List
+from typing import List, Optional
 
 import lightgbm as lgb
 import mlflow
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from mlflow.tracking import MlflowClient
 from pydantic import BaseModel
 
+from mtls import MTLSH11Protocol
 from input_validator import InputValidationError, validate_candidates
 from output_controller import OutputController, RateLimitExceeded
 from response_signer import ResponseSigner
@@ -70,6 +79,7 @@ RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
 SUSPICION_THRESHOLD = float(os.environ.get("SUSPICION_THRESHOLD", "0.5"))
 SUSPICION_HALF_LIFE_SECONDS = float(os.environ.get("SUSPICION_HALF_LIFE_SECONDS", "600"))
 RESTRICTED_TOP_K = int(os.environ.get("RESTRICTED_TOP_K", "3"))
+TLS_DIR = os.environ.get("TLS_DIR", "/keys/tls")
 
 FEATURE_COLUMNS = [
     "category",
@@ -95,7 +105,9 @@ class Candidate(BaseModel):
 
 
 class RecommendRequest(BaseModel):
-    client_id: str
+    # Identificador declarado por el cliente: se ignora. La identidad sale
+    # del certificado de la autenticación mutua (ver mtls.py).
+    client_id: Optional[str] = None
     session: List[Candidate]
 
 
@@ -269,8 +281,19 @@ def health():
 
 
 @app.post("/v1/recommend")
-async def recommend(payload: RecommendRequest):
-    client_id = payload.client_id
+async def recommend(payload: RecommendRequest, request: Request):
+    # 0) Protector del Canal: identidad del cliente desde su certificado.
+    #    Con CERT_REQUIRED no debería llegar una solicitud sin él; si llega,
+    #    se rechaza con 401 (defensa en profundidad).
+    client_id = request.scope.get("client_cert_cn")
+    if not client_id:
+        logger.warning("[inference-gateway] Solicitud sin identidad de certificado: 401.")
+        return JSONResponse(status_code=401, content={"error": "client_not_authenticated"})
+    if payload.client_id and payload.client_id != client_id:
+        logger.info(
+            f"[inference-gateway] client_id declarado '{payload.client_id}' ignorado; "
+            f"identidad del certificado: {client_id}"
+        )
 
     # 1) Rate limiting (Output Controller) -- control de primera línea,
     #    antes de gastar cómputo en validación e inferencia.
@@ -325,4 +348,23 @@ async def recommend(payload: RecommendRequest):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # Autenticación mutua: sin certificado de cliente emitido por la CA del
+    # prototipo, el canal no se establece.
+    for name in ("ca.crt", "server.crt", "server.key"):
+        if not os.path.isfile(os.path.join(TLS_DIR, name)):
+            logger.critical(
+                f"[inference-gateway] ERROR CRÍTICO: falta {name} en {TLS_DIR}. "
+                "Ejecuta ./scripts/generate_tls_certs.sh antes de levantar el gateway."
+            )
+            sys.exit(1)
+    logger.info("[inference-gateway] Autenticación mutua TLS activa: se exige certificado de cliente.")
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8080,
+        http=MTLSH11Protocol,
+        ssl_certfile=os.path.join(TLS_DIR, "server.crt"),
+        ssl_keyfile=os.path.join(TLS_DIR, "server.key"),
+        ssl_ca_certs=os.path.join(TLS_DIR, "ca.crt"),
+        ssl_cert_reqs=ssl.CERT_REQUIRED,
+    )

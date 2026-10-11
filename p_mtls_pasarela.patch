@@ -1,0 +1,835 @@
+diff --git a/README.md b/README.md
+index b75d2e9..bd38fd1 100644
+--- a/README.md
++++ b/README.md
+@@ -59,7 +59,7 @@ Tres patrones integrados cubren las siete:
+ 
+ | Patrón | Qué hace | Debilidades |
+ |---|---|---|
+-| **P-01** Secure Inference Gateway | Valida lo que entra al modelo, controla lo que sale y firma cada respuesta | D-02, D-04, D-05 |
++| **P-01** Secure Inference Gateway | Autentica al cliente, valida lo que entra al modelo, controla lo que sale y firma cada respuesta | D-02, D-04, D-05 |
+ | **P-02** Secure Retraining Gate | Distingue el drift natural de la manipulación adversarial antes de reentrenar | D-03 (y la variante de feedback de D-07) |
+ | **P-03** Trusted ML Artifact Pipeline | Garantiza la procedencia e integridad de datos, modelos base y artefactos | D-01, D-06, D-07 |
+ 
+@@ -114,7 +114,7 @@ flowchart TB
+     TRAINER -- "registra modelo + ML-BOM firmados" --> MLFLOW
+     GATE -- "verifica antes de aprobar" --> MLFLOW
+     GW -- "verifica firma y ML-BOM al arrancar" --> MLFLOW
+-    CLIENT -- "POST /v1/recommend" --> GW
++    CLIENT -- "POST /v1/recommend (mTLS)" --> GW
+     FB -. "señal del Monitor" .-> PG
+     KEYS -.-> TRAINER
+     KEYS -.-> GATE
+@@ -260,7 +260,10 @@ región estrecha; los disparadores conjuntivos o distribuidos quedan fuera.
+ acepta cualquier entrada, expone más información de la necesaria y entrega
+ respuestas que nadie puede verificar.
+ 
+-Un gateway **FastAPI** con tres sub-componentes coordinados:
++Un gateway **FastAPI** con tres sub-componentes coordinados. Solo acepta
++conexiones con **autenticación mutua TLS**: el cliente presenta un
++certificado emitido por la CA del prototipo y su identidad es el CN de ese
++certificado, no un campo que él mismo declara.
+ 
+ - **Input Validator** — esquema [Pandera](https://pandera.readthedocs.io/)
+   con tipos y rangos por feature (por ejemplo, `price` en (0, 10000),
+@@ -270,8 +273,10 @@ Un gateway **FastAPI** con tres sub-componentes coordinados:
+ - **Output Controller** — devuelve solo `product_id` y posición del
+   *top-k*, **sin scores crudos** (que facilitarían la extracción del modelo),
+   y limita la tasa por cliente con un *token bucket*.
+-- **Response Signer** — firma cada respuesta con **Ed25519** sobre su JSON
+-  canónico, para que el cliente detecte cualquier manipulación en tránsito.
++- **Protector del Canal** — autenticación mutua TLS, que establece la
++  identidad del cliente (sin certificado válido, el canal no se establece), y
++  firma de cada respuesta con **Ed25519** sobre su JSON canónico, para que el
++  cliente detecte cualquier manipulación en tránsito.
+ 
+ Los tres sub-componentes **comparten un registro de sospecha por cliente**
+ (endurecimiento cruzado). Cada entrada rechazada suma 0.3 y cada exceso de
+@@ -301,6 +306,9 @@ integración P-03 → P-01, defensa en profundidad entre patrones.
+ | `rate-limit` | 429 dentro de la ráfaga |
+ | `cross-hardening` | cliente limpio: precio 5000 → 200 con 5 recomendaciones · cliente con 2 rechazos: precio 5000 → 422 (perfil de referencia) y solicitud normal → 200 con 3 recomendaciones firmadas |
+ | `tampered-response` | payload alterado → firma inválida, detectado |
++| `no-client-cert` | conexión sin certificado de cliente → el canal TLS no se establece |
++| `untrusted-cert` | certificado de una CA ajena → el canal TLS no se establece |
++| `identity-rotation` | tres `client_id` declarados distintos con el mismo certificado → un solo estado; tras 2 rechazos, 3 recomendaciones firmadas para la identidad del certificado |
+ 
+ ### Capa 3 · P-02 Secure Retraining Gate
+ 
+@@ -450,7 +458,7 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
+ | Capa 1 · caso positivo | ✅ aprobado |
+ | Capa 1 · bytes alterados | ✅ rechazado |
+ | Capa 1 · sustitución firmada | ✅ rechazado |
+-| Capa 2 · 5 casos del cliente | ✅ 5/5 |
++| Capa 2 · 8 casos del cliente | ✅ 8/8 |
+ | Capa 2 · arranque ante sustitución firmada | ✅ el gateway no arranca |
+ | Capa 3 · demo con semilla 42 | ✅ 0 / 3 / 4 |
+ | Capa 3 · sensibilidad | ✅ 18/18 |
+@@ -478,6 +486,7 @@ chmod +x scripts/*.sh
+ # Claves (una sola vez)
+ ./scripts/generate_keys.sh              # cosign: firma de modelos y ML-BOM
+ ./scripts/generate_response_keys.sh     # Ed25519: firma de respuestas
++./scripts/generate_tls_certs.sh         # mTLS: CA, pasarela y clientes
+ 
+ # Capa 1 · P-03
+ ./scripts/run_layer1_provenance_demo.sh
+@@ -535,8 +544,8 @@ entorno, y los scripts lo reportan por separado.
+     ├── trainer/                 procedencia, modelos externos, entrenamiento, firma, ML-BOM,
+     │                            ataques y Compuerta de Promoción
+     ├── deployment-gate/         controles C1–C3 antes de aprobar un despliegue
+-    ├── inference-gateway/       P-01: validador, controlador de salida, firmante y registro de sospecha
+-    ├── inference-client/        cliente verificador con los 5 casos
++    ├── inference-gateway/       P-01: mTLS, validador, controlador de salida, firmante y registro de sospecha
++    ├── inference-client/        cliente verificador con los 8 casos
+     └── feedback-gate/           P-02: Guardián, Monitor y cuarentena
+ ```
+ 
+@@ -547,6 +556,9 @@ entorno, y los scripts lo reportan por separado.
+ - **Evaluar y reportar todos los controles**, aunque uno ya haya fallado. La
+   evidencia muestra qué control detectó cada ataque, y eso es lo que permite
+   demostrar que C2 aporta algo que C3 no.
++- **Identidad desde el certificado.** El límite de tasa y la sospecha siguen
++  a la identidad autenticada por mTLS; un `client_id` declarado se ignora,
++  así que cambiarlo no reinicia el estado del cliente.
+ - **Fail-closed en el gateway.** Si no puede verificar el modelo y su
+   vínculo con el ML-BOM, no arranca.
+ - **Endurecimiento cruzado con decaimiento.** La sospecha se acumula por
+@@ -571,6 +583,9 @@ producción:
+   (*low-and-slow*) queda fuera del alcance de un detector por lote.
+ - Firma con claves locales y **sin registro de transparencia** (Rekor). En
+   producción, las claves vivirían en un KMS con rotación y revocación.
++- **mTLS con una CA local.** Los certificados de cliente los emite una CA del
++  prototipo, sin revocación; en producción, la identidad la daría la PKI de
++  la malla de servicios (por ejemplo, Istio) o un proveedor de identidad.
+ - **P-03** implementa sus tres sub-componentes y el ML-BOM. Los terceros (socio y
+   proveedor) se simulan en el mismo MinIO, con claves propias. El prototipo
+   entrena desde cero: el modelo base validado no se usa como punto de
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 9df0906..e84abc8 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -159,10 +159,13 @@ services:
+       RESPONSE_SIGNING_KEY_PATH: /keys/response_ed25519.key
+       TOP_K: ${TOP_K:-5}
+       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
++      TLS_DIR: /keys/tls
+     volumes:
+       - ./keys:/keys:ro
+     healthcheck:
+-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
++      # Con autenticación mutua, el chequeo de salud también presenta un
++      # certificado de cliente (identidad "healthcheck").
++      test: ["CMD", "python", "-c", "import ssl, urllib.request as u; c = ssl.create_default_context(cafile='/keys/tls/ca.crt'); c.load_cert_chain('/keys/tls/clients/healthcheck.crt', '/keys/tls/clients/healthcheck.key'); u.urlopen('https://localhost:8080/health', context=c, timeout=3)"]
+       interval: 5s
+       timeout: 5s
+       retries: 20
+@@ -176,8 +179,9 @@ services:
+       context: ./services/inference-client
+     container_name: recoshop-inference-client
+     environment:
+-      GATEWAY_URL: http://inference-gateway:8080
++      GATEWAY_URL: https://inference-gateway:8080
+       RESPONSE_PUB_KEY_PATH: /keys/response_ed25519.pub
++      TLS_DIR: /keys/tls
+       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+       PYTHONUNBUFFERED: "1"
+     volumes:
+@@ -185,7 +189,8 @@ services:
+     networks:
+       - recoshop-net
+     # Sin puertos propios: se invoca con "docker compose run --rm inference-client
+-    # python client_demo.py --case <valid|invalid-input|rate-limit|cross-hardening|tampered-response>".
++    # python client_demo.py --case <valid|invalid-input|rate-limit|cross-hardening|tampered-response|
++    # no-client-cert|untrusted-cert|identity-rotation>".
+ 
+   feedback-gate:
+     build:
+diff --git a/scripts/capture_evidence.sh b/scripts/capture_evidence.sh
+index 78f8b8d..b919198 100755
+--- a/scripts/capture_evidence.sh
++++ b/scripts/capture_evidence.sh
+@@ -13,7 +13,7 @@
+ #
+ # Uso: ./scripts/capture_evidence.sh
+ # Requisitos: Docker en ejecución y claves generadas (generate_keys.sh,
+-# generate_response_keys.sh).
++# generate_response_keys.sh, generate_tls_certs.sh).
+ # =============================================================================
+ set -uo pipefail
+ 
+@@ -31,7 +31,7 @@ DEMOS=(
+   "capa1_caso_positivo|run_layer1_positive_case.sh"
+   "capa1_caso_negativo_append|run_layer1_negative_case.sh"
+   "capa1_caso_negativo_swap_signed|run_layer1_swap_signed_case.sh"
+-  "capa2_demo_5casos|run_layer2_demo.sh"
++  "capa2_demo_8casos|run_layer2_demo.sh"
+   "capa2_arranque_sustitucion_firmada|run_layer2_swap_signed_startup.sh"
+   "capa3_demo_semilla42|run_layer3_demo.sh"
+   "capa3_sensibilidad_6semillas|run_layer3_seeds.sh"
+diff --git a/scripts/generate_tls_certs.sh b/scripts/generate_tls_certs.sh
+new file mode 100755
+index 0000000..e690aed
+--- /dev/null
++++ b/scripts/generate_tls_certs.sh
+@@ -0,0 +1,55 @@
++#!/usr/bin/env bash
++# =============================================================================
++# generate_tls_certs.sh
++# =============================================================================
++# Genera (si no existe ya) la infraestructura de autenticación mutua TLS del
++# Protector del Canal de P-01 (Capa 2) en ./keys/tls: la CA del prototipo,
++# el certificado de la pasarela y un certificado por identidad de cliente
++# (ver services/inference-gateway/make_tls.py).
++#
++# Relación con la tesis: Anexo C, P-01 — el Protector del Canal establece
++# autenticación mutua y verifica la identidad del cliente. Mitigación de
++# D-05; además, el estado por cliente de D-02 y D-04 sigue a una identidad
++# autenticada.
++# =============================================================================
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
++KEYS_DIR="$PROJECT_ROOT/keys"
++
++if [ -f "$KEYS_DIR/tls/ca.crt" ] && [ -f "$KEYS_DIR/tls/server.crt" ]; then
++  echo "Ya existen los certificados TLS en $KEYS_DIR/tls."
++  echo "Si deseas regenerarlos, elimina primero el directorio $KEYS_DIR/tls."
++  exit 0
++fi
++
++if ! command -v docker >/dev/null 2>&1; then
++  echo "ERROR: se requiere Docker para generar los certificados con este script."
++  exit 1
++fi
++
++mkdir -p "$KEYS_DIR"
++cd "$PROJECT_ROOT"
++
++echo "Generando la CA y los certificados de autenticación mutua (P-01) en $KEYS_DIR/tls ..."
++
++# Se reutiliza la imagen de inference-gateway ('cryptography' ya instalado).
++# --no-deps evita levantar mlflow/minio solo para generar certificados.
++docker compose run --rm --no-deps --entrypoint python \
++  -v "$KEYS_DIR:/keys-rw" \
++  inference-gateway \
++  make_tls.py /keys-rw/tls
++
++if [ ! -f "$KEYS_DIR/tls/ca.crt" ] || [ ! -f "$KEYS_DIR/tls/server.key" ]; then
++  echo "ERROR: la generación no produjo los archivos esperados."
++  echo "Reconstruye la imagen: docker compose build inference-gateway"
++  exit 1
++fi
++
++echo ""
++echo "Certificados generados:"
++ls -la "$KEYS_DIR/tls" "$KEYS_DIR/tls/clients"
++echo ""
++echo "IMPORTANTE: los archivos .key son claves PRIVADAS. El directorio keys/"
++echo "está excluido del repositorio; no lo subas."
+diff --git a/scripts/run_layer2_demo.sh b/scripts/run_layer2_demo.sh
+index 3849f05..6feca10 100755
+--- a/scripts/run_layer2_demo.sh
++++ b/scripts/run_layer2_demo.sh
+@@ -3,13 +3,14 @@
+ # run_layer2_demo.sh — Capa 2 (P-01 Secure Inference Gateway)
+ # =============================================================================
+ # Orquesta la demostración completa de la Capa 2:
+-#   1. Verifica que existan las claves cosign (Capa 1) y Ed25519 (Capa 2).
++#   1. Verifica que existan las claves cosign (Capa 1), Ed25519 (Capa 2) y
++#      los certificados de autenticación mutua (Capa 2).
+ #   2. Levanta la infraestructura (MinIO + MLflow).
+ #   3. Si no hay modelo registrado, entrena uno reutilizando la Capa 1
+ #      SIN modificarla (docker compose run --rm trainer python train.py).
+ #   4. Levanta inference-gateway y espera su healthcheck.
+-#   5. Ejecuta los 5 casos del cliente verificador (client_demo.py).
+-#   6. Imprime un resumen final; sale 0 solo si los 5 casos dieron el
++#   5. Ejecuta los 8 casos del cliente verificador (client_demo.py).
++#   6. Imprime un resumen final; sale 0 solo si los 8 casos dieron el
+ #      resultado esperado.
+ #
+ # Relación con la tesis: Patrón P-01 — Secure Inference Gateway, mitigación
+@@ -40,8 +41,15 @@ if [ ! -f keys/response_ed25519.key ] || [ ! -f keys/response_ed25519.pub ]; the
+   exit 1
+ fi
+ 
++if [ ! -f keys/tls/ca.crt ] || [ ! -f keys/tls/server.crt ]; then
++  echo ""
++  echo "ERROR: no se encontraron los certificados de autenticación mutua en ./keys/tls."
++  echo "Ejecuta primero: ./scripts/generate_tls_certs.sh"
++  exit 1
++fi
++
+ echo ""
+-echo "[1/6] Claves cosign y Ed25519 verificadas."
++echo "[1/6] Claves cosign y Ed25519 y certificados TLS verificados."
+ 
+ # --- 2) Levantar infraestructura (MinIO + MLflow, transitivamente) ---
+ echo ""
+@@ -115,11 +123,12 @@ if [ "$GATEWAY_STATUS" != "healthy" ]; then
+ fi
+ echo "      inference-gateway está healthy."
+ 
+-# --- 5) Ejecutar los 5 casos del cliente verificador ---
++# --- 5) Ejecutar los 8 casos del cliente verificador ---
+ echo ""
+ echo "[5/6] Ejecutando los casos del cliente verificador (client_demo.py)..."
+ 
+-CASES=("valid" "invalid-input" "rate-limit" "cross-hardening" "tampered-response")
++CASES=("valid" "invalid-input" "rate-limit" "cross-hardening" "tampered-response"
++       "no-client-cert" "untrusted-cert" "identity-rotation")
+ declare -A CASE_RESULTS
+ OVERALL_EXIT=0
+ 
+@@ -151,7 +160,7 @@ done
+ 
+ echo ""
+ if [ "$OVERALL_EXIT" -eq 0 ]; then
+-  echo "✅ RESULTADO GLOBAL: los 5 casos de la Capa 2 dieron el resultado esperado."
++  echo "✅ RESULTADO GLOBAL: los 8 casos de la Capa 2 dieron el resultado esperado."
+ else
+   echo "⚠️  RESULTADO GLOBAL: al menos un caso de la Capa 2 no dio el resultado esperado."
+ fi
+diff --git a/services/inference-client/client_demo.py b/services/inference-client/client_demo.py
+index 115819b..ec08e12 100644
+--- a/services/inference-client/client_demo.py
++++ b/services/inference-client/client_demo.py
+@@ -2,9 +2,10 @@
+ client_demo.py
+ ===============
+ Cliente verificador de referencia para la Capa 2 (P-01 Secure Inference
+-Gateway). Ejecuta cuatro casos de demostración contra el endpoint
++Gateway). Ejecuta ocho casos de demostración contra el endpoint
+ POST /v1/recommend, verificando en cada uno el comportamiento esperado de
+-los tres sub-componentes de P-01:
++los tres sub-componentes de P-01. Todas las conexiones usan autenticación
++mutua TLS: cada caso presenta el certificado de su propia identidad.
+ 
+   - valid              : solicitud bien formada -> 200, firma Ed25519
+                           válida, payload sin scores crudos (solo
+@@ -24,6 +25,16 @@ los tres sub-componentes de P-01:
+                           verificar -> la verificación Ed25519 debe
+                           FALLAR (simulación de manipulación en tránsito,
+                           mitigación de D-05).
++  - no-client-cert      : conexión TLS sin certificado de cliente -> el
++                          canal no se establece (Protector del Canal).
++  - untrusted-cert      : certificado emitido por una CA ajena -> el canal
++                          no se establece.
++  - identity-rotation   : un cliente cambia el client_id declarado en cada
++                          solicitud. La pasarela lo ignora y aplica el
++                          estado al certificado: tras dos rechazos, el
++                          cliente queda en modo endurecido (3 recomendaciones)
++                          y la respuesta firmada lleva la identidad del
++                          certificado.
+ 
+ Relación con la tesis: Patrón P-01 — Secure Inference Gateway, A4.4 §3.1 /
+ §4.1. Cada caso imprime "[client] CASO <nombre>: OK/FALLO" y sale con
+@@ -41,7 +52,26 @@ from cryptography.exceptions import InvalidSignature
+ from cryptography.hazmat.primitives import serialization
+ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+ 
+-GATEWAY_URL = os.environ.get("GATEWAY_URL", "http://inference-gateway:8080")
++GATEWAY_URL = os.environ.get("GATEWAY_URL", "https://inference-gateway:8080")
++TLS_DIR = os.environ.get("TLS_DIR", "/keys/tls")
++CA_CERT = os.path.join(TLS_DIR, "ca.crt")
++
++
++def _cert(client_id: str, untrusted: bool = False):
++    """Par (certificado, clave) de la identidad indicada."""
++    base = os.path.join(TLS_DIR, "untrusted" if untrusted else "clients", client_id)
++    return (base + ".crt", base + ".key")
++
++
++def _post(client_id: str, session, declared_id=None):
++    """POST con autenticación mutua: la identidad es la del certificado."""
++    body = {"session": session}
++    if declared_id is not None:
++        body["client_id"] = declared_id
++    return requests.post(
++        f"{GATEWAY_URL}/v1/recommend", json=body, timeout=10,
++        cert=_cert(client_id), verify=CA_CERT,
++    )
+ RESPONSE_PUB_KEY_PATH = os.environ.get("RESPONSE_PUB_KEY_PATH", "/keys/response_ed25519.pub")
+ RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
+ 
+@@ -88,8 +118,7 @@ def _sample_session():
+ 
+ def case_valid() -> bool:
+     public_key = _load_public_key()
+-    payload = {"client_id": "demo-client-valid", "session": _sample_session()}
+-    resp = requests.post(f"{GATEWAY_URL}/v1/recommend", json=payload, timeout=10)
++    resp = _post("demo-client-valid", _sample_session())
+ 
+     if resp.status_code != 200:
+         print(f"[client] esperaba 200, recibí {resp.status_code}: {resp.text}")
+@@ -123,8 +152,7 @@ def case_invalid_input() -> bool:
+     session[0]["price"] = -50           # fuera de rango (0, 10000), mitigación de D-04
+     session[1]["product_popularity"] = 9.9  # fuera de rango [0, 1], mitigación de D-04
+ 
+-    payload = {"client_id": "demo-client-invalid", "session": session}
+-    resp = requests.post(f"{GATEWAY_URL}/v1/recommend", json=payload, timeout=10)
++    resp = _post("demo-client-invalid", session)
+ 
+     if resp.status_code != 422:
+         print(f"[client] esperaba 422, recibí {resp.status_code}: {resp.text}")
+@@ -135,13 +163,10 @@ def case_invalid_input() -> bool:
+ 
+ 
+ def case_rate_limit() -> bool:
+-    client_id = "demo-client-rate-limit"
+-    payload = {"client_id": client_id, "session": _sample_session()}
+-
+     n_requests = RATE_LIMIT_PER_MINUTE + 5
+     saw_429 = False
+     for _ in range(n_requests):
+-        resp = requests.post(f"{GATEWAY_URL}/v1/recommend", json=payload, timeout=10)
++        resp = _post("demo-client-rate-limit", _sample_session())
+         if resp.status_code == 429:
+             saw_429 = True
+             break
+@@ -161,7 +186,6 @@ def case_cross_hardening() -> bool:
+     Información de Salida para ese cliente, y solo para él.
+     """
+     public_key = _load_public_key()
+-    url = f"{GATEWAY_URL}/v1/recommend"
+ 
+     def borderline_session():
+         session = _sample_session()
+@@ -174,7 +198,7 @@ def case_cross_hardening() -> bool:
+         return session
+ 
+     # 1) Cliente limpio: la sesión con precio 5000 se acepta en modo normal.
+-    clean = requests.post(url, json={"client_id": "demo-client-clean", "session": borderline_session()}, timeout=10)
++    clean = _post("demo-client-clean", borderline_session())
+     if clean.status_code != 200 or len(clean.json()["payload"]["recommendations"]) != 5:
+         print(f"[client] el cliente limpio debía recibir 200 con 5 recomendaciones; recibió {clean.status_code}.")
+         return False
+@@ -182,19 +206,19 @@ def case_cross_hardening() -> bool:
+     # 2) Cliente sospechoso: dos entradas rechazadas elevan su puntuación.
+     suspect = "demo-client-suspect"
+     for _ in range(2):
+-        r = requests.post(url, json={"client_id": suspect, "session": invalid_session()}, timeout=10)
++        r = _post(suspect, invalid_session())
+         if r.status_code != 422:
+             print(f"[client] se esperaba 422 por entrada inválida, se recibió {r.status_code}.")
+             return False
+ 
+     # 3) Ahora la misma sesión con precio 5000 se rechaza por el perfil de referencia.
+-    r = requests.post(url, json={"client_id": suspect, "session": borderline_session()}, timeout=10)
++    r = _post(suspect, borderline_session())
+     if r.status_code != 422 or not any("perfil de referencia" in str(d) for d in r.json().get("details", [])):
+         print(f"[client] en modo endurecido se esperaba 422 por perfil de referencia; se recibió {r.status_code}: {r.text}")
+         return False
+ 
+     # 4) Una solicitud normal se sirve, firmada, pero con menos recomendaciones.
+-    r = requests.post(url, json={"client_id": suspect, "session": _sample_session()}, timeout=10)
++    r = _post(suspect, _sample_session())
+     if r.status_code != 200:
+         print(f"[client] la solicitud normal del cliente sospechoso debía servirse; se recibió {r.status_code}.")
+         return False
+@@ -213,8 +237,7 @@ def case_cross_hardening() -> bool:
+ 
+ def case_tampered_response() -> bool:
+     public_key = _load_public_key()
+-    payload = {"client_id": "demo-client-tampered", "session": _sample_session()}
+-    resp = requests.post(f"{GATEWAY_URL}/v1/recommend", json=payload, timeout=10)
++    resp = _post("demo-client-tampered", _sample_session())
+ 
+     if resp.status_code != 200:
+         print(f"[client] esperaba 200 antes de manipular la respuesta, recibí {resp.status_code}.")
+@@ -240,12 +263,78 @@ def case_tampered_response() -> bool:
+     return True
+ 
+ 
++def _expect_handshake_rejected(label: str, cert) -> bool:
++    """El canal no debe establecerse: ninguna respuesta HTTP es aceptable."""
++    try:
++        resp = requests.post(
++            f"{GATEWAY_URL}/v1/recommend", json={"session": _sample_session()},
++            timeout=10, cert=cert, verify=CA_CERT,
++        )
++    except requests.exceptions.RequestException as exc:
++        print(f"[client] {label}: el canal TLS no se estableció ({type(exc).__name__}).")
++        return True
++    print(f"[client] {label}: la pasarela respondió {resp.status_code}; debía rechazar el canal.")
++    return False
++
++
++def case_no_client_cert() -> bool:
++    return _expect_handshake_rejected("sin certificado de cliente", None)
++
++
++def case_untrusted_cert() -> bool:
++    return _expect_handshake_rejected(
++        "certificado de una CA ajena", _cert("demo-client-untrusted", untrusted=True)
++    )
++
++
++def case_identity_rotation() -> bool:
++    """
++    Sin autenticación, un cliente podría evadir el estado por cliente
++    cambiando el identificador que declara. Con mTLS, el estado sigue al
++    certificado: los identificadores declarados se ignoran.
++    """
++    public_key = _load_public_key()
++    who = "demo-client-rotation"
++
++    invalid = _sample_session()
++    invalid[0]["price"] = -50
++    for declared in ("rotating-id-1", "rotating-id-2"):
++        r = _post(who, invalid, declared_id=declared)
++        if r.status_code != 422:
++            print(f"[client] se esperaba 422 por entrada inválida, se recibió {r.status_code}.")
++            return False
++
++    r = _post(who, _sample_session(), declared_id="rotating-id-3")
++    if r.status_code != 200:
++        print(f"[client] la solicitud normal debía servirse; se recibió {r.status_code}.")
++        return False
++    body = r.json()
++    n_recs = len(body["payload"]["recommendations"])
++    served_to = body["payload"].get("client_id")
++    if n_recs != 3 or served_to != who or not _verify_signature(body, public_key):
++        print(
++            f"[client] se esperaban 3 recomendaciones firmadas para '{who}'; "
++            f"se recibieron {n_recs} para '{served_to}'."
++        )
++        return False
++
++    print(
++        "[client] rotación de identidad neutralizada: tres client_id declarados distintos, "
++        f"un solo estado para el certificado '{who}', que quedó en modo endurecido "
++        "(3 recomendaciones firmadas)."
++    )
++    return True
++
++
+ CASES = {
+     "valid": case_valid,
+     "invalid-input": case_invalid_input,
+     "rate-limit": case_rate_limit,
+     "cross-hardening": case_cross_hardening,
+     "tampered-response": case_tampered_response,
++    "no-client-cert": case_no_client_cert,
++    "untrusted-cert": case_untrusted_cert,
++    "identity-rotation": case_identity_rotation,
+ }
+ 
+ 
+diff --git a/services/inference-gateway/Dockerfile b/services/inference-gateway/Dockerfile
+index e87ea22..3d5a83b 100644
+--- a/services/inference-gateway/Dockerfile
++++ b/services/inference-gateway/Dockerfile
+@@ -26,6 +26,6 @@ WORKDIR /app
+ COPY requirements.txt .
+ RUN pip install --no-cache-dir -r requirements.txt
+ 
+-COPY app.py input_validator.py output_controller.py response_signer.py suspicion.py ./
++COPY app.py input_validator.py output_controller.py response_signer.py suspicion.py mtls.py make_tls.py ./
+ 
+ CMD ["python", "app.py"]
+diff --git a/services/inference-gateway/app.py b/services/inference-gateway/app.py
+index 5e5d350..b90b5ff 100644
+--- a/services/inference-gateway/app.py
++++ b/services/inference-gateway/app.py
+@@ -8,8 +8,9 @@ sub-componentes del patrón:
+   1. input_validator.py  -- Validador de Entrada (mitigación de D-04)
+   2. output_controller.py -- Controlador de Información de Salida,
+      incluye top-k limiting y rate limiting (mitigación de D-02)
+-  3. response_signer.py  -- Protector del Canal / Response Signer
+-     (mitigación de D-05)
++  3. Protector del Canal (mitigación de D-05): autenticación mutua TLS
++     (mtls.py), con la identidad del cliente tomada de su certificado, y
++     firma Ed25519 de cada respuesta (response_signer.py)
+ 
+ PUNTO DE INTEGRACIÓN CON LA CAPA 1 (P-03): al arrancar, este servicio NO
+ confía en ningún artefacto local. Descarga el modelo y su firma
+@@ -27,6 +28,12 @@ modelo descargado coincida con el que el ML-BOM declara. Así la pasarela
+ rechaza también la sustitución por un modelo legítimamente firmado de otra
+ versión, igual que la compuerta de despliegue.
+ 
++IDENTIDAD DEL CLIENTE: la pasarela solo acepta conexiones TLS con un
++certificado de cliente emitido por la CA del prototipo (CERT_REQUIRED). El
++identificador del cliente es el CN de ese certificado; el campo `client_id`
++del cuerpo, si llega, se ignora. Así el límite de tasa y la sospecha siguen
++al cliente autenticado y no a un identificador que él mismo declara.
++
+ ENDURECIMIENTO CRUZADO: los sub-componentes comparten un registro de
+ sospecha por cliente (suspicion.py). Los rechazos del Validador y los
+ excesos de tasa del Controlador elevan la puntuación del cliente; por
+@@ -41,19 +48,21 @@ import json
+ import logging
+ import os
+ import shutil
++import ssl
+ import subprocess
+ import sys
+ import tempfile
+-from typing import List
++from typing import List, Optional
+ 
+ import lightgbm as lgb
+ import mlflow
+-from fastapi import FastAPI
++from fastapi import FastAPI, Request
+ from fastapi.exceptions import RequestValidationError
+ from fastapi.responses import JSONResponse
+ from mlflow.tracking import MlflowClient
+ from pydantic import BaseModel
+ 
++from mtls import MTLSH11Protocol
+ from input_validator import InputValidationError, validate_candidates
+ from output_controller import OutputController, RateLimitExceeded
+ from response_signer import ResponseSigner
+@@ -70,6 +79,7 @@ RATE_LIMIT_PER_MINUTE = int(os.environ.get("RATE_LIMIT_PER_MINUTE", "30"))
+ SUSPICION_THRESHOLD = float(os.environ.get("SUSPICION_THRESHOLD", "0.5"))
+ SUSPICION_HALF_LIFE_SECONDS = float(os.environ.get("SUSPICION_HALF_LIFE_SECONDS", "600"))
+ RESTRICTED_TOP_K = int(os.environ.get("RESTRICTED_TOP_K", "3"))
++TLS_DIR = os.environ.get("TLS_DIR", "/keys/tls")
+ 
+ FEATURE_COLUMNS = [
+     "category",
+@@ -95,7 +105,9 @@ class Candidate(BaseModel):
+ 
+ 
+ class RecommendRequest(BaseModel):
+-    client_id: str
++    # Identificador declarado por el cliente: se ignora. La identidad sale
++    # del certificado de la autenticación mutua (ver mtls.py).
++    client_id: Optional[str] = None
+     session: List[Candidate]
+ 
+ 
+@@ -269,8 +281,19 @@ def health():
+ 
+ 
+ @app.post("/v1/recommend")
+-async def recommend(payload: RecommendRequest):
+-    client_id = payload.client_id
++async def recommend(payload: RecommendRequest, request: Request):
++    # 0) Protector del Canal: identidad del cliente desde su certificado.
++    #    Con CERT_REQUIRED no debería llegar una solicitud sin él; si llega,
++    #    se rechaza con 401 (defensa en profundidad).
++    client_id = request.scope.get("client_cert_cn")
++    if not client_id:
++        logger.warning("[inference-gateway] Solicitud sin identidad de certificado: 401.")
++        return JSONResponse(status_code=401, content={"error": "client_not_authenticated"})
++    if payload.client_id and payload.client_id != client_id:
++        logger.info(
++            f"[inference-gateway] client_id declarado '{payload.client_id}' ignorado; "
++            f"identidad del certificado: {client_id}"
++        )
+ 
+     # 1) Rate limiting (Output Controller) -- control de primera línea,
+     #    antes de gastar cómputo en validación e inferencia.
+@@ -325,4 +348,23 @@ async def recommend(payload: RecommendRequest):
+ if __name__ == "__main__":
+     import uvicorn
+ 
+-    uvicorn.run(app, host="0.0.0.0", port=8080)
++    # Autenticación mutua: sin certificado de cliente emitido por la CA del
++    # prototipo, el canal no se establece.
++    for name in ("ca.crt", "server.crt", "server.key"):
++        if not os.path.isfile(os.path.join(TLS_DIR, name)):
++            logger.critical(
++                f"[inference-gateway] ERROR CRÍTICO: falta {name} en {TLS_DIR}. "
++                "Ejecuta ./scripts/generate_tls_certs.sh antes de levantar el gateway."
++            )
++            sys.exit(1)
++    logger.info("[inference-gateway] Autenticación mutua TLS activa: se exige certificado de cliente.")
++    uvicorn.run(
++        app,
++        host="0.0.0.0",
++        port=8080,
++        http=MTLSH11Protocol,
++        ssl_certfile=os.path.join(TLS_DIR, "server.crt"),
++        ssl_keyfile=os.path.join(TLS_DIR, "server.key"),
++        ssl_ca_certs=os.path.join(TLS_DIR, "ca.crt"),
++        ssl_cert_reqs=ssl.CERT_REQUIRED,
++    )
+diff --git a/services/inference-gateway/make_tls.py b/services/inference-gateway/make_tls.py
+new file mode 100644
+index 0000000..029119b
+--- /dev/null
++++ b/services/inference-gateway/make_tls.py
+@@ -0,0 +1,128 @@
++"""
++make_tls.py
++===========
++Genera la infraestructura de autenticación mutua (mTLS) del Protector del
++Canal de P-01 (Capa 2):
++
++  <dir>/ca.crt                     autoridad de certificación del prototipo
++  <dir>/server.crt, server.key     certificado de la pasarela
++                                   (SAN: inference-gateway, localhost, 127.0.0.1)
++  <dir>/clients/<id>.crt, .key     un certificado por identidad de cliente;
++                                   la pasarela toma la identidad del CN
++  <dir>/untrusted/<id>.crt, .key   cliente firmado por una CA ajena (caso
++                                   negativo); la clave de esa CA se descarta
++
++La clave privada de la CA no se guarda: una vez emitidos los certificados,
++nadie puede emitir otros con la misma CA. Para añadir identidades hay que
++regenerar todo el directorio.
++
++Relación con la tesis: Anexo C, P-01 — «el Protector del Canal verifica la
++identidad del cliente» y «establece autenticación mutua del canal». En
++producción, la PKI sería la de la malla de servicios (p. ej., Istio).
++"""
++
++import datetime as dt
++import ipaddress
++import os
++import sys
++
++from cryptography import x509
++from cryptography.hazmat.primitives import hashes, serialization
++from cryptography.hazmat.primitives.asymmetric import ec
++from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID
++
++CLIENT_IDS = [
++    "demo-client-valid",
++    "demo-client-invalid",
++    "demo-client-rate-limit",
++    "demo-client-clean",
++    "demo-client-suspect",
++    "demo-client-tampered",
++    "demo-client-rotation",
++    "healthcheck",
++]
++UNTRUSTED_IDS = ["demo-client-untrusted"]
++VALIDITY_DAYS = 3650
++
++
++def _key():
++    return ec.generate_private_key(ec.SECP256R1())
++
++
++def _name(cn: str) -> x509.Name:
++    return x509.Name([
++        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "RecoShop (prototipo)"),
++        x509.NameAttribute(NameOID.COMMON_NAME, cn),
++    ])
++
++
++def _ca(cn: str):
++    key = _key()
++    now = dt.datetime.now(dt.timezone.utc)
++    cert = (
++        x509.CertificateBuilder()
++        .subject_name(_name(cn)).issuer_name(_name(cn))
++        .public_key(key.public_key()).serial_number(x509.random_serial_number())
++        .not_valid_before(now - dt.timedelta(minutes=5))
++        .not_valid_after(now + dt.timedelta(days=VALIDITY_DAYS))
++        .add_extension(x509.BasicConstraints(ca=True, path_length=0), critical=True)
++        .add_extension(x509.KeyUsage(False, False, False, False, False, True, True, False, False), critical=True)
++        .sign(key, hashes.SHA256())
++    )
++    return key, cert
++
++
++def _leaf(cn: str, ca_key, ca_cert, server: bool):
++    key = _key()
++    now = dt.datetime.now(dt.timezone.utc)
++    eku = ExtendedKeyUsageOID.SERVER_AUTH if server else ExtendedKeyUsageOID.CLIENT_AUTH
++    builder = (
++        x509.CertificateBuilder()
++        .subject_name(_name(cn)).issuer_name(ca_cert.subject)
++        .public_key(key.public_key()).serial_number(x509.random_serial_number())
++        .not_valid_before(now - dt.timedelta(minutes=5))
++        .not_valid_after(now + dt.timedelta(days=VALIDITY_DAYS))
++        .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
++        .add_extension(x509.ExtendedKeyUsage([eku]), critical=False)
++    )
++    if server:
++        builder = builder.add_extension(x509.SubjectAlternativeName([
++            x509.DNSName("inference-gateway"),
++            x509.DNSName("localhost"),
++            x509.IPAddress(ipaddress.ip_address("127.0.0.1")),
++        ]), critical=False)
++    return key, builder.sign(ca_key, hashes.SHA256())
++
++
++def _write(path: str, key, cert) -> None:
++    os.makedirs(os.path.dirname(path), exist_ok=True)
++    with open(path + ".key", "wb") as f:
++        f.write(key.private_bytes(
++            serialization.Encoding.PEM,
++            serialization.PrivateFormat.PKCS8,
++            serialization.NoEncryption(),
++        ))
++    with open(path + ".crt", "wb") as f:
++        f.write(cert.public_bytes(serialization.Encoding.PEM))
++
++
++def main(out_dir: str) -> None:
++    ca_key, ca_cert = _ca("RecoShop Inference CA (prototipo)")
++    os.makedirs(out_dir, exist_ok=True)
++    with open(os.path.join(out_dir, "ca.crt"), "wb") as f:
++        f.write(ca_cert.public_bytes(serialization.Encoding.PEM))
++
++    _write(os.path.join(out_dir, "server"), *_leaf("inference-gateway", ca_key, ca_cert, server=True))
++    for cid in CLIENT_IDS:
++        _write(os.path.join(out_dir, "clients", cid), *_leaf(cid, ca_key, ca_cert, server=False))
++
++    rogue_key, rogue_cert = _ca("CA ajena (atacante simulado)")
++    for cid in UNTRUSTED_IDS:
++        _write(os.path.join(out_dir, "untrusted", cid), *_leaf(cid, rogue_key, rogue_cert, server=False))
++
++    print(f"CA, certificado de la pasarela y {len(CLIENT_IDS)} certificados de cliente en {out_dir}.")
++    print("La clave privada de la CA no se conserva.")
++
++
++if __name__ == "__main__":
++    main(sys.argv[1] if len(sys.argv) > 1 else "/keys-rw/tls")
+diff --git a/services/inference-gateway/mtls.py b/services/inference-gateway/mtls.py
+new file mode 100644
+index 0000000..256a723
+--- /dev/null
++++ b/services/inference-gateway/mtls.py
+@@ -0,0 +1,47 @@
++"""
++mtls.py
++=======
++Identidad del cliente a partir del certificado de la autenticación mutua
++(mTLS), parte del Protector del Canal de P-01.
++
++uvicorn termina TLS con CERT_REQUIRED: un cliente sin certificado, o con
++uno que no emitió la CA del prototipo, no completa el establecimiento del
++canal. Este protocolo añade al `scope` ASGI de cada solicitud el CN del
++certificado presentado (`client_cert_cn`). La aplicación toma la identidad
++del cliente de ahí y no del cuerpo de la solicitud, de modo que el estado
++por cliente (límite de tasa y sospecha) no se evade cambiando un
++identificador declarado.
++
++uvicorn 0.27 no expone el certificado del par en el scope; por eso se
++extiende el protocolo h11 en lugar de usar un middleware.
++"""
++
++from typing import Optional
++
++from uvicorn.protocols.http.h11_impl import H11Protocol
++
++
++def _common_name(peercert: Optional[dict]) -> Optional[str]:
++    if not peercert:
++        return None
++    for rdn in peercert.get("subject", ()):
++        for key, value in rdn:
++            if key == "commonName":
++                return value
++    return None
++
++
++class MTLSH11Protocol(H11Protocol):
++    def connection_made(self, transport):  # type: ignore[override]
++        super().connection_made(transport)
++        ssl_object = transport.get_extra_info("ssl_object")
++        cn = _common_name(ssl_object.getpeercert()) if ssl_object is not None else None
++        inner = self.app
++
++        async def app_with_identity(scope, receive, send):
++            if scope["type"] == "http":
++                scope = dict(scope)
++                scope["client_cert_cn"] = cn
++            await inner(scope, receive, send)
++
++        self.app = app_with_identity

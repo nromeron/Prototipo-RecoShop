@@ -159,10 +159,13 @@ services:
       RESPONSE_SIGNING_KEY_PATH: /keys/response_ed25519.key
       TOP_K: ${TOP_K:-5}
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
+      TLS_DIR: /keys/tls
     volumes:
       - ./keys:/keys:ro
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=3)"]
+      # Con autenticación mutua, el chequeo de salud también presenta un
+      # certificado de cliente (identidad "healthcheck").
+      test: ["CMD", "python", "-c", "import ssl, urllib.request as u; c = ssl.create_default_context(cafile='/keys/tls/ca.crt'); c.load_cert_chain('/keys/tls/clients/healthcheck.crt', '/keys/tls/clients/healthcheck.key'); u.urlopen('https://localhost:8080/health', context=c, timeout=3)"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -176,8 +179,9 @@ services:
       context: ./services/inference-client
     container_name: recoshop-inference-client
     environment:
-      GATEWAY_URL: http://inference-gateway:8080
+      GATEWAY_URL: https://inference-gateway:8080
       RESPONSE_PUB_KEY_PATH: /keys/response_ed25519.pub
+      TLS_DIR: /keys/tls
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-30}
       PYTHONUNBUFFERED: "1"
     volumes:
@@ -185,7 +189,8 @@ services:
     networks:
       - recoshop-net
     # Sin puertos propios: se invoca con "docker compose run --rm inference-client
-    # python client_demo.py --case <valid|invalid-input|rate-limit|cross-hardening|tampered-response>".
+    # python client_demo.py --case <valid|invalid-input|rate-limit|cross-hardening|tampered-response|
+    # no-client-cert|untrusted-cert|identity-rotation>".
 
   feedback-gate:
     build:

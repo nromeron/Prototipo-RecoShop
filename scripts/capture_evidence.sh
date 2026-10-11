@@ -13,7 +13,7 @@
 #
 # Uso: ./scripts/capture_evidence.sh
 # Requisitos: Docker en ejecución y claves generadas (generate_keys.sh,
-# generate_response_keys.sh).
+# generate_response_keys.sh, generate_tls_certs.sh).
 # =============================================================================
 set -uo pipefail
 
@@ -31,7 +31,7 @@ DEMOS=(
   "capa1_caso_positivo|run_layer1_positive_case.sh"
   "capa1_caso_negativo_append|run_layer1_negative_case.sh"
   "capa1_caso_negativo_swap_signed|run_layer1_swap_signed_case.sh"
-  "capa2_demo_5casos|run_layer2_demo.sh"
+  "capa2_demo_8casos|run_layer2_demo.sh"
   "capa2_arranque_sustitucion_firmada|run_layer2_swap_signed_startup.sh"
   "capa3_demo_semilla42|run_layer3_demo.sh"
   "capa3_sensibilidad_6semillas|run_layer3_seeds.sh"

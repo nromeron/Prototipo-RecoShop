@@ -3,13 +3,14 @@
 # run_layer2_demo.sh — Capa 2 (P-01 Secure Inference Gateway)
 # =============================================================================
 # Orquesta la demostración completa de la Capa 2:
-#   1. Verifica que existan las claves cosign (Capa 1) y Ed25519 (Capa 2).
+#   1. Verifica que existan las claves cosign (Capa 1), Ed25519 (Capa 2) y
+#      los certificados de autenticación mutua (Capa 2).
 #   2. Levanta la infraestructura (MinIO + MLflow).
 #   3. Si no hay modelo registrado, entrena uno reutilizando la Capa 1
 #      SIN modificarla (docker compose run --rm trainer python train.py).
 #   4. Levanta inference-gateway y espera su healthcheck.
-#   5. Ejecuta los 5 casos del cliente verificador (client_demo.py).
-#   6. Imprime un resumen final; sale 0 solo si los 5 casos dieron el
+#   5. Ejecuta los 8 casos del cliente verificador (client_demo.py).
+#   6. Imprime un resumen final; sale 0 solo si los 8 casos dieron el
 #      resultado esperado.
 #
 # Relación con la tesis: Patrón P-01 — Secure Inference Gateway, mitigación
@@ -40,8 +41,15 @@ if [ ! -f keys/response_ed25519.key ] || [ ! -f keys/response_ed25519.pub ]; the
   exit 1
 fi
 
+if [ ! -f keys/tls/ca.crt ] || [ ! -f keys/tls/server.crt ]; then
+  echo ""
+  echo "ERROR: no se encontraron los certificados de autenticación mutua en ./keys/tls."
+  echo "Ejecuta primero: ./scripts/generate_tls_certs.sh"
+  exit 1
+fi
+
 echo ""
-echo "[1/6] Claves cosign y Ed25519 verificadas."
+echo "[1/6] Claves cosign y Ed25519 y certificados TLS verificados."
 
 # --- 2) Levantar infraestructura (MinIO + MLflow, transitivamente) ---
 echo ""
@@ -115,11 +123,12 @@ if [ "$GATEWAY_STATUS" != "healthy" ]; then
 fi
 echo "      inference-gateway está healthy."
 
-# --- 5) Ejecutar los 5 casos del cliente verificador ---
+# --- 5) Ejecutar los 8 casos del cliente verificador ---
 echo ""
 echo "[5/6] Ejecutando los casos del cliente verificador (client_demo.py)..."
 
-CASES=("valid" "invalid-input" "rate-limit" "cross-hardening" "tampered-response")
+CASES=("valid" "invalid-input" "rate-limit" "cross-hardening" "tampered-response"
+       "no-client-cert" "untrusted-cert" "identity-rotation")
 declare -A CASE_RESULTS
 OVERALL_EXIT=0
 
@@ -151,7 +160,7 @@ done
 
 echo ""
 if [ "$OVERALL_EXIT" -eq 0 ]; then
-  echo "✅ RESULTADO GLOBAL: los 5 casos de la Capa 2 dieron el resultado esperado."
+  echo "✅ RESULTADO GLOBAL: los 8 casos de la Capa 2 dieron el resultado esperado."
 else
   echo "⚠️  RESULTADO GLOBAL: al menos un caso de la Capa 2 no dio el resultado esperado."
 fi
