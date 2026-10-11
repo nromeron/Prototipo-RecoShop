@@ -1,11 +1,11 @@
-Captura de evidencia — 2026-10-11T16:44:25Z — commit bec8d23 (con cambios sin commitear)
+Captura de evidencia — 2026-10-11T18:30:00Z — commit fb29054 (con cambios sin commitear)
 
 ✅  capa1_procedencia_datos              exit 0
 ✅  capa1_validador_modelos_externos     exit 0
 ✅  capa1_caso_positivo                  exit 0
 ✅  capa1_caso_negativo_append           exit 0
 ✅  capa1_caso_negativo_swap_signed      exit 0
-✅  capa2_demo_5casos                    exit 0
+✅  capa2_demo_8casos                    exit 0
 ✅  capa2_arranque_sustitucion_firmada   exit 0
 ✅  capa3_demo_semilla42                 exit 0
 ✅  capa3_sensibilidad_6semillas         exit 0

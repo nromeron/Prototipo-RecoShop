@@ -2,15 +2,15 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer1_external_model_demo.sh
- Fecha (UTC):     2026-10-11T16:26:58Z
- Commit:          bec8d23 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-11T18:11:21Z
+ Commit:          fb29054 (con cambios sin commitear)
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-client  51848ce476ff
+recoshop-prototype-inference-gateway  335741c3fe61
 recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
@@ -20,16 +20,16 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
 [1/4] Escenario: legitimate (se espera exit 0)
- Container recoshop-mlflow Running 
  Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-f8b575e0fd1f Creating 
- Container recoshop-prototype-trainer-run-f8b575e0fd1f Created 
+ Container recoshop-prototype-trainer-run-c4f1f311e1bb Creating 
+ Container recoshop-prototype-trainer-run-c4f1f311e1bb Created 
 [proveedor] Publica su modelo base legítimo, firmado.
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
@@ -48,9 +48,9 @@ recoshop-prototype-mlflow  6c81f2d724b5
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ✅ control 3  Comportamiento en entorno aislado
-[sign_model] Firmando artefacto: /tmp/tmpacigwhxp/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpacigwhxp/record.json.sig --tlog-upload=false --yes /tmp/tmpacigwhxp/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmpacigwhxp/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmp6hn12syd/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp6hn12syd/record.json.sig --tlog-upload=false --yes /tmp/tmp6hn12syd/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmp6hn12syd/record.json.sig
 
 Modelo base ACEPTADO. Registro de validación (firmado por RecoShop): recoshop-provenance/base-models/1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83.json
 ✅ OK: exit 0, según lo esperado.
@@ -64,8 +64,8 @@ Modelo base ACEPTADO. Registro de validación (firmado por RecoShop): recoshop-p
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-bfe7bedfa805 Creating 
- Container recoshop-prototype-trainer-run-bfe7bedfa805 Created 
+ Container recoshop-prototype-trainer-run-f4e7dc49af17 Creating 
+ Container recoshop-prototype-trainer-run-f4e7dc49af17 Created 
 [atacante] Suplantación tipográfica: publica en «models-hub/sesions-ranker-base» un modelo firmado con su propia clave.
 
 [validador-modelos] Repositorio: models-hub/sesions-ranker-base · artefacto: model.txt
@@ -91,16 +91,16 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
 ✅ OK: exit 1, según lo esperado.
 
 [3/4] Escenario: malicious-pickle (se espera exit 1)
- Container recoshop-mlflow Running 
  Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-552bfc04f280 Creating 
- Container recoshop-prototype-trainer-run-552bfc04f280 Created 
+ Container recoshop-prototype-trainer-run-2ee051b29955 Creating 
+ Container recoshop-prototype-trainer-run-2ee051b29955 Created 
 [proveedor] Cuenta comprometida: publica un pickle firmado que ejecuta código al cargarse.
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.pkl
@@ -125,8 +125,8 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-1199eef89de5 Creating 
- Container recoshop-prototype-trainer-run-1199eef89de5 Created 
+ Container recoshop-prototype-trainer-run-2e5cdee820f5 Creating 
+ Container recoshop-prototype-trainer-run-2e5cdee820f5 Created 
 [proveedor] Cuenta comprometida: publica en formato de texto un modelo firmado con puerta trasera (price = 13.37).
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
@@ -145,9 +145,9 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ❌ control 3  Comportamiento en entorno aislado
-[sign_model] Firmando artefacto: /tmp/tmptrcmbs6s/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmptrcmbs6s/record.json.sig --tlog-upload=false --yes /tmp/tmptrcmbs6s/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmptrcmbs6s/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmp1l122hl1/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp1l122hl1/record.json.sig --tlog-upload=false --yes /tmp/tmp1l122hl1/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmp1l122hl1/record.json.sig
 
 Modelo base en CUARENTENA: firma y formato válidos, pero el comportamiento presenta un disparador estrecho.
 

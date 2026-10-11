@@ -2,15 +2,15 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_e2e_demo.sh
- Fecha (UTC):     2026-10-11T16:41:34Z
- Commit:          bec8d23 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-11T18:27:38Z
+ Commit:          fb29054 (con cambios sin commitear)
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-client  51848ce476ff
+recoshop-prototype-inference-gateway  335741c3fe61
 recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
@@ -28,46 +28,46 @@ recoshop-prototype-mlflow  6c81f2d724b5
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-f62ce9b91b9a Creating 
- Container recoshop-prototype-trainer-run-f62ce9b91b9a Created 
+ Container recoshop-prototype-trainer-run-f1170933147b Creating 
+ Container recoshop-prototype-trainer-run-f1170933147b Created 
 [train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
 [train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
-[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T16:26:57.864552+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
-[train] MLflow run_id: ef6c8c4b55674f31853c5430b21cef26
+[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T18:11:20.206195+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
+[train] MLflow run_id: 5a4ee681ac3d488c84b9a6ecbc558ad0
 [train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-[sign_model] Firmando artefacto: /tmp/tmpnt3_lmo1/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpnt3_lmo1/model.txt.sig --tlog-upload=false --yes /tmp/tmpnt3_lmo1/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmpnt3_lmo1/model.txt.sig
-[train] ML-BOM generado (CycloneDX 1.7): SHA-256 3e890e3ff106ef9fbd0b9ad6c095048d869141ab97b915ce9d8a618cedbbd39e
-[sign_model] Firmando artefacto: /tmp/tmpnt3_lmo1/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpnt3_lmo1/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpnt3_lmo1/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmpnt3_lmo1/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmpmxuk3pvx/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpmxuk3pvx/model.txt.sig --tlog-upload=false --yes /tmp/tmpmxuk3pvx/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmpmxuk3pvx/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 6d4aadd915a5ccfac4d9f1717173cb372b42ccee4d355d4338fbbce9d8637132
+[sign_model] Firmando artefacto: /tmp/tmpmxuk3pvx/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpmxuk3pvx/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpmxuk3pvx/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmpmxuk3pvx/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/11 16:41:44 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 55
-Created version '55' of model 'recoshop-ranker'.
-[train] Modelo registrado: 'recoshop-ranker' versión 55 (run_id=ef6c8c4b55674f31853c5430b21cef26).
+2026/10/11 18:27:49 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 65
+Created version '65' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 65 (run_id=5a4ee681ac3d488c84b9a6ecbc558ad0).
 [train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [train] Consulta el run en la UI de MLflow: http://mlflow:5000
- Container recoshop-prototype-feedback-gate-run-6b5ab265cbec Creating 
- Container recoshop-prototype-feedback-gate-run-6b5ab265cbec Created 
- Container recoshop-prototype-feedback-gate-run-200f5a790ec5 Creating 
- Container recoshop-prototype-feedback-gate-run-200f5a790ec5 Created 
+ Container recoshop-prototype-feedback-gate-run-39ecef253324 Creating 
+ Container recoshop-prototype-feedback-gate-run-39ecef253324 Created 
+ Container recoshop-prototype-feedback-gate-run-f8bf7102daea Creating 
+ Container recoshop-prototype-feedback-gate-run-f8bf7102daea Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
 [generate_feedback] batch_adversarial.csv generado: 1000 filas -> /app/data/batch_adversarial.csv
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
-Versión vigente en el Model Registry: 55
-Ciclos: e2e-adversarial-20261011T164135Z · e2e-legitimo-20261011T164135Z
+Versión vigente en el Model Registry: 65
+Ciclos: e2e-adversarial-20261011T182739Z · e2e-legitimo-20261011T182739Z
 
 ==============================================================
  A. Ciclo adversarial
 ==============================================================
 
 [A1] Monitor de Drift de Seguridad sobre el lote adversarial
- Container recoshop-prototype-feedback-gate-run-7a0e4ff7e3a4 Creating 
- Container recoshop-prototype-feedback-gate-run-7a0e4ff7e3a4 Created 
+ Container recoshop-prototype-feedback-gate-run-2fee1679969e Creating 
+ Container recoshop-prototype-feedback-gate-run-2fee1679969e Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_adversarial.csv
 ==============================================================================
@@ -97,25 +97,25 @@ Ciclos: e2e-adversarial-20261011T164135Z · e2e-legitimo-20261011T164135Z
 ==============================================================================
 [feedback_gate] Lote copiado a cuarentena: /app/data/quarantine/batch_adversarial.csv
 [feedback_gate] Evidencia de la decisión: /app/data/quarantine/batch_adversarial.csv.reason.json
-[feedback_gate] Decisión registrada en MLflow para el ciclo 'e2e-adversarial-20261011T164135Z' (run 0d19f11a4b564e2e828a8144f8bd3a12).
+[feedback_gate] Decisión registrada en MLflow para el ciclo 'e2e-adversarial-20261011T182739Z' (run 93e5ef97a81c4b75a7ef4f65ad391082).
 
 ✅ OK: A1 Monitor, lote adversarial → exit 4
 
 [A2] Compuerta de Promoción: señal leída de MLflow, vigente desde el registro
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-826de3df0e4c Creating 
- Container recoshop-prototype-trainer-run-826de3df0e4c Created 
-[promotion-gate] Ciclo 'e2e-adversarial-20261011T164135Z': decisiones del Monitor leídas de MLflow:
-  batch_adversarial.csv: CUARENTENA (exit 4, run 0d19f11a4b564e2e828a8144f8bd3a12)
+ Container recoshop-prototype-trainer-run-0ca224a1f8ad Creating 
+ Container recoshop-prototype-trainer-run-0ca224a1f8ad Created 
+[promotion-gate] Ciclo 'e2e-adversarial-20261011T182739Z': decisiones del Monitor leídas de MLflow:
+  batch_adversarial.csv: CUARENTENA (exit 4, run 93e5ef97a81c4b75a7ef4f65ad391082)
 [promotion-gate] Señal del Monitor derivada: adversarial
-[promotion-gate] Modelo vigente: versión 55 del Model Registry, firma verificada (SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c).
+[promotion-gate] Modelo vigente: versión 65 del Model Registry, firma verificada (SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c).
 [promotion-gate] Escenario de retroalimentación: poisoned (semilla 500); señal del Monitor: adversarial
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 a42ca30aec2fcf6eed6d8421923f60b90fd20b64cd1f401f92757cab5bbdc0dc
@@ -136,13 +136,13 @@ Ciclos: e2e-adversarial-20261011T164135Z · e2e-legitimo-20261011T164135Z
   RECHAZADO (exit code 1)
   Regla: Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.
   El candidato NO se promueve: el modelo vigente sigue en producción.
-[promotion-gate] No se registra una versión nueva: la versión 55 sigue vigente en el Model Registry.
+[promotion-gate] No se registra una versión nueva: la versión 65 sigue vigente en el Model Registry.
 [promotion-gate] Registro de auditoría:
 {
   "decision": "RECHAZADO",
   "exit_code": 1,
   "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.",
-  "decided_at_utc": "2026-10-11T16:42:30.900576+00:00",
+  "decided_at_utc": "2026-10-11T18:28:27.889431+00:00",
   "feedback_scenario": "poisoned",
   "monitor_signal": "adversarial",
   "thresholds": {
@@ -184,39 +184,39 @@ Ciclos: e2e-adversarial-20261011T164135Z · e2e-legitimo-20261011T164135Z
     ]
   },
   "cycle": {
-    "cycle_id": "e2e-adversarial-20261011T164135Z",
+    "cycle_id": "e2e-adversarial-20261011T182739Z",
     "monitor_decisions": [
       {
-        "run_id": "0d19f11a4b564e2e828a8144f8bd3a12",
+        "run_id": "93e5ef97a81c4b75a7ef4f65ad391082",
         "batch_file": "batch_adversarial.csv",
         "batch_sha256": "ad6a8a18c9034a1c0c7e2053a087d17c9f9bb3d2f0715afe7a649e8002d0597f",
         "decision": "CUARENTENA",
         "exit_code": 4
       }
     ],
-    "current_model_version": "55"
+    "current_model_version": "65"
   }
 }
 
 ✅ OK: A2 Compuerta de Promoción, retroalimentación envenenada → exit 1
-✅ OK: A3 Versión vigente tras el ciclo adversarial → versión 55
+✅ OK: A3 Versión vigente tras el ciclo adversarial → versión 65
 
 [A4] Compuerta de despliegue sobre la versión vigente
- Container recoshop-mlflow Running 
  Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-deployment-gate-run-610326aa49ca Creating 
- Container recoshop-prototype-deployment-gate-run-610326aa49ca Created 
-[deployment-gate] Evaluando la versión 55 de 'recoshop-ranker' (run_id=ef6c8c4b55674f31853c5430b21cef26) para despliegue.
+ Container recoshop-prototype-deployment-gate-run-16b10421041f Creating 
+ Container recoshop-prototype-deployment-gate-run-16b10421041f Created 
+[deployment-gate] Evaluando la versión 65 de 'recoshop-ranker' (run_id=5a4ee681ac3d488c84b9a6ecbc558ad0) para despliegue.
 [deployment-gate] SHA-256 del modelo descargado:     a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
 [deployment-gate] SHA-256 declarado en el ML-BOM:    a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp275hkyak/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmp275hkyak/model/mlbom.cdx.json
-[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp275hkyak/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmp275hkyak/model/model.txt
+[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpp71f4zjv/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpp71f4zjv/model/mlbom.cdx.json
+[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpp71f4zjv/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmpp71f4zjv/model/model.txt
 
 [deployment-gate] Controles de P-03:
   ✅ C1  Firma del ML-BOM (documento de enlace auténtico)
@@ -224,15 +224,15 @@ Ciclos: e2e-adversarial-20261011T164135Z · e2e-legitimo-20261011T164135Z
   ✅ C3  Firma del modelo (artefacto auténtico)
 
 Los tres controles pasaron. Modelo APROBADO para despliegue.
-✅ OK: A4 Compuerta de despliegue, versión 55 → exit 0
+✅ OK: A4 Compuerta de despliegue, versión 65 → exit 0
 
 ==============================================================
  B. Ciclo legítimo
 ==============================================================
 
 [B1] Monitor de Drift de Seguridad sobre el lote limpio
- Container recoshop-prototype-feedback-gate-run-98ba2f24b6ec Creating 
- Container recoshop-prototype-feedback-gate-run-98ba2f24b6ec Created 
+ Container recoshop-prototype-feedback-gate-run-8ce7fade2ab3 Creating 
+ Container recoshop-prototype-feedback-gate-run-8ce7fade2ab3 Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_clean.csv
 ==============================================================================
@@ -260,7 +260,7 @@ Los tres controles pasaron. Modelo APROBADO para despliegue.
   ACEPTADO (exit code 0)
   Regla: El Guardian de Ingesta no detectó drift global significativo.
 ==============================================================================
-[feedback_gate] Decisión registrada en MLflow para el ciclo 'e2e-legitimo-20261011T164135Z' (run 23309fcee95d41d8b3cef3fec16203d2).
+[feedback_gate] Decisión registrada en MLflow para el ciclo 'e2e-legitimo-20261011T182739Z' (run a83b92f61e0846e5aae3872c098b684e).
 ✅ OK: B1 Monitor, lote limpio → exit 0
 
 [B2] Compuerta de Promoción: aprobación, firma y registro del candidato
@@ -272,12 +272,12 @@ Los tres controles pasaron. Modelo APROBADO para despliegue.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-7c6777dd6136 Creating 
- Container recoshop-prototype-trainer-run-7c6777dd6136 Created 
-[promotion-gate] Ciclo 'e2e-legitimo-20261011T164135Z': decisiones del Monitor leídas de MLflow:
-  batch_clean.csv: ACEPTADO (exit 0, run 23309fcee95d41d8b3cef3fec16203d2)
+ Container recoshop-prototype-trainer-run-6d2fc57bd2d7 Creating 
+ Container recoshop-prototype-trainer-run-6d2fc57bd2d7 Created 
+[promotion-gate] Ciclo 'e2e-legitimo-20261011T182739Z': decisiones del Monitor leídas de MLflow:
+  batch_clean.csv: ACEPTADO (exit 0, run a83b92f61e0846e5aae3872c098b684e)
 [promotion-gate] Señal del Monitor derivada: none
-[promotion-gate] Modelo vigente: versión 55 del Model Registry, firma verificada (SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c).
+[promotion-gate] Modelo vigente: versión 65 del Model Registry, firma verificada (SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c).
 [promotion-gate] Escenario de retroalimentación: clean (semilla 500); señal del Monitor: none
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo candidato (reentrenado con 300 sesiones de retroalimentación): SHA-256 d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
@@ -299,20 +299,20 @@ Los tres controles pasaron. Modelo APROBADO para despliegue.
   Regla: Sin degradación global ni selectiva y sin alerta adversarial del Monitor.
 
 [promotion-gate] Candidato APROBADO: se firma y se registra por la ruta de P-03.
-[promotion-gate] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T16:26:57.864552+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
-[promotion-gate] MLflow run_id: 7cd6d577055d4867a135fb4e8ded15a7
+[promotion-gate] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T18:11:20.206195+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
+[promotion-gate] MLflow run_id: 24b1e52d28464a44a0f5b511edde8517
 [promotion-gate] SHA-256 del artefacto (antes de firmar): d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
-[sign_model] Firmando artefacto: /tmp/tmpg8sl_la_/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpg8sl_la_/model.txt.sig --tlog-upload=false --yes /tmp/tmpg8sl_la_/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmpg8sl_la_/model.txt.sig
-[promotion-gate] ML-BOM generado (CycloneDX 1.7): SHA-256 8c1b3e5fb5d43fe0c1f2fddd38450d76263cda6bd3133a68df3dbae15762e65c
-[sign_model] Firmando artefacto: /tmp/tmpg8sl_la_/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpg8sl_la_/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpg8sl_la_/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmpg8sl_la_/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmpt12agffd/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpt12agffd/model.txt.sig --tlog-upload=false --yes /tmp/tmpt12agffd/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmpt12agffd/model.txt.sig
+[promotion-gate] ML-BOM generado (CycloneDX 1.7): SHA-256 0fbce1116aad5af83c27f029573fb8fb95483b75cdc154a9cae7dd84826958e0
+[sign_model] Firmando artefacto: /tmp/tmpt12agffd/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpt12agffd/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpt12agffd/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmpt12agffd/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/11 16:43:17 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 56
-Created version '56' of model 'recoshop-ranker'.
-[promotion-gate] Modelo registrado: 'recoshop-ranker' versión 56 (run_id=7cd6d577055d4867a135fb4e8ded15a7).
+2026/10/11 18:29:08 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 66
+Created version '66' of model 'recoshop-ranker'.
+[promotion-gate] Modelo registrado: 'recoshop-ranker' versión 66 (run_id=24b1e52d28464a44a0f5b511edde8517).
 [promotion-gate] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [promotion-gate] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [promotion-gate] Registro de auditoría:
@@ -320,7 +320,7 @@ Created version '56' of model 'recoshop-ranker'.
   "decision": "APROBADO",
   "exit_code": 0,
   "rule": "Sin degradación global ni selectiva y sin alerta adversarial del Monitor.",
-  "decided_at_utc": "2026-10-11T16:43:15.759459+00:00",
+  "decided_at_utc": "2026-10-11T18:29:07.340290+00:00",
   "feedback_scenario": "clean",
   "monitor_signal": "none",
   "thresholds": {
@@ -360,40 +360,40 @@ Created version '56' of model 'recoshop-ranker'.
     "degraded_categories": []
   },
   "cycle": {
-    "cycle_id": "e2e-legitimo-20261011T164135Z",
+    "cycle_id": "e2e-legitimo-20261011T182739Z",
     "monitor_decisions": [
       {
-        "run_id": "23309fcee95d41d8b3cef3fec16203d2",
+        "run_id": "a83b92f61e0846e5aae3872c098b684e",
         "batch_file": "batch_clean.csv",
         "batch_sha256": "c3347598d35824ab9f105c423450a5f497d0ef79cbfba99f54990431aec6ffc7",
         "decision": "ACEPTADO",
         "exit_code": 0
       }
     ],
-    "current_model_version": "55",
-    "registered_version": "56",
-    "registered_run_id": "7cd6d577055d4867a135fb4e8ded15a7"
+    "current_model_version": "65",
+    "registered_version": "66",
+    "registered_run_id": "24b1e52d28464a44a0f5b511edde8517"
   }
 }
 ✅ OK: B2 Compuerta de Promoción, retroalimentación limpia → exit 0
-✅ OK: B3 Versión registrada por la Compuerta de Promoción → versión 56
+✅ OK: B3 Versión registrada por la Compuerta de Promoción → versión 66
 
 [B4] Compuerta de despliegue sobre la versión promovida
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-deployment-gate-run-55d5f714d605 Creating 
- Container recoshop-prototype-deployment-gate-run-55d5f714d605 Created 
-[deployment-gate] Evaluando la versión 56 de 'recoshop-ranker' (run_id=7cd6d577055d4867a135fb4e8ded15a7) para despliegue.
+ Container recoshop-prototype-deployment-gate-run-2df95fb32fcc Creating 
+ Container recoshop-prototype-deployment-gate-run-2df95fb32fcc Created 
+[deployment-gate] Evaluando la versión 66 de 'recoshop-ranker' (run_id=24b1e52d28464a44a0f5b511edde8517) para despliegue.
 [deployment-gate] SHA-256 del modelo descargado:     d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
 [deployment-gate] SHA-256 declarado en el ML-BOM:    d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
-[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp8ajy27c2/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmp8ajy27c2/model/mlbom.cdx.json
-[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp8ajy27c2/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmp8ajy27c2/model/model.txt
+[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp6yii38kh/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmp6yii38kh/model/mlbom.cdx.json
+[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp6yii38kh/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmp6yii38kh/model/model.txt
 
 [deployment-gate] Controles de P-03:
   ✅ C1  Firma del ML-BOM (documento de enlace auténtico)
@@ -401,27 +401,28 @@ Created version '56' of model 'recoshop-ranker'.
   ✅ C3  Firma del modelo (artefacto auténtico)
 
 Los tres controles pasaron. Modelo APROBADO para despliegue.
-✅ OK: B4 Compuerta de despliegue, versión 56 → exit 0
+✅ OK: B4 Compuerta de despliegue, versión 66 → exit 0
 
 [B5] Arranque de la pasarela de inferencia
-   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 56 de 'recoshop-ranker' (run_id=7cd6d577055d4867a135fb4e8ded15a7).
+   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 66 de 'recoshop-ranker' (run_id=24b1e52d28464a44a0f5b511edde8517).
    recoshop-inference-gateway  | Found credentials in environment variables.
    recoshop-inference-gateway  | [inference-gateway] SHA-256 del artefacto descargado: d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
    recoshop-inference-gateway  | [inference-gateway] SHA-256 declarado en el ML-BOM:   d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
-   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpm_9v3y87/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpm_9v3y87/model/mlbom.cdx.json
-   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpm_9v3y87/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmpm_9v3y87/model/model.txt
+   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpejo4cpf4/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpejo4cpf4/model/mlbom.cdx.json
+   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpejo4cpf4/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmpejo4cpf4/model/model.txt
    recoshop-inference-gateway  | [inference-gateway] ML-BOM, vínculo y firma del modelo verificados. Cargando modelo...
    recoshop-inference-gateway  | [inference-gateway] Modelo cargado y listo para servir.
+   recoshop-inference-gateway  | [inference-gateway] Autenticación mutua TLS activa: se exige certificado de cliente.
    recoshop-inference-gateway  | INFO:     Started server process [1]
    recoshop-inference-gateway  | INFO:     Waiting for application startup.
    recoshop-inference-gateway  | INFO:     Application startup complete.
-   recoshop-inference-gateway  | INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-   recoshop-inference-gateway  | INFO:     127.0.0.1:39158 - "GET /health HTTP/1.1" 200 OK
-✅ OK: B5 Pasarela en servicio → versión 56
+   recoshop-inference-gateway  | INFO:     Uvicorn running on https://0.0.0.0:8080 (Press CTRL+C to quit)
+   recoshop-inference-gateway  | INFO:     127.0.0.1:43368 - "GET /health HTTP/1.1" 200 OK
+✅ OK: B5 Pasarela en servicio → versión 66
 
 [B6] Cliente verificador contra la pasarela
- Container recoshop-prototype-inference-client-run-2ae48259cfe3 Creating 
- Container recoshop-prototype-inference-client-run-2ae48259cfe3 Created 
+ Container recoshop-prototype-inference-client-run-615278962f4f Creating 
+ Container recoshop-prototype-inference-client-run-615278962f4f Created 
 [client] respuesta válida, firma verificada, 5 recomendaciones sin scores crudos (D-02 / D-05 mitigadas).
 [client] CASO valid: OK
 ✅ OK: B6 Cliente, respuesta firmada → exit 0
@@ -430,40 +431,40 @@ Los tres controles pasaron. Modelo APROBADO para despliegue.
  C. Fallo en cascada: el modelo promovido se altera tras su firma
 ==============================================================
 
-[C1] Ataque D-01 sobre la versión 56
- Container recoshop-minio Running 
+[C1] Ataque D-01 sobre la versión 66
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-2f8274e7d46f Creating 
- Container recoshop-prototype-trainer-run-2f8274e7d46f Created 
-[tamper_model] Atacando la versión 56 de 'recoshop-ranker' en s3://mlflow-artifacts/3/7cd6d577055d4867a135fb4e8ded15a7/artifacts/model/model.txt
-[tamper_model] Descargando artefacto original: s3://mlflow-artifacts/3/7cd6d577055d4867a135fb4e8ded15a7/artifacts/model/model.txt
+ Container recoshop-prototype-trainer-run-283d865b05c7 Creating 
+ Container recoshop-prototype-trainer-run-283d865b05c7 Created 
+[tamper_model] Atacando la versión 66 de 'recoshop-ranker' en s3://mlflow-artifacts/3/24b1e52d28464a44a0f5b511edde8517/artifacts/model/model.txt
+[tamper_model] Descargando artefacto original: s3://mlflow-artifacts/3/24b1e52d28464a44a0f5b511edde8517/artifacts/model/model.txt
 [tamper_model] Tamaño original: 139973 bytes.
 [tamper_model] Artefacto SOBRESCRITO en el registry (140027 bytes).
 [tamper_model] NOTA: el archivo de firma (model.txt.sig) NO fue modificado, porque el atacante simulado no posee la clave privada de firma.
 [tamper_model] Simulación de ataque D-01 completada. Ejecuta ahora el deployment-gate para observar el rechazo.
 
 [C2] Compuerta de despliegue sobre la versión alterada
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-deployment-gate-run-d8f7ad0ccbd6 Creating 
- Container recoshop-prototype-deployment-gate-run-d8f7ad0ccbd6 Created 
-[deployment-gate] Evaluando la versión 56 de 'recoshop-ranker' (run_id=7cd6d577055d4867a135fb4e8ded15a7) para despliegue.
+ Container recoshop-prototype-deployment-gate-run-5727f6cb8549 Creating 
+ Container recoshop-prototype-deployment-gate-run-5727f6cb8549 Created 
+[deployment-gate] Evaluando la versión 66 de 'recoshop-ranker' (run_id=24b1e52d28464a44a0f5b511edde8517) para despliegue.
 [deployment-gate] SHA-256 del modelo descargado:     000702b39267ae3160259bb710de436b0e1f1f6df7226072e259f9add263c88b
 [deployment-gate] SHA-256 declarado en el ML-BOM:    d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
-[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmptiyl1bcm/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmptiyl1bcm/model/mlbom.cdx.json
-[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmptiyl1bcm/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmptiyl1bcm/model/model.txt
+[deployment-gate] Verificando firma de ML-BOM: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpow4knzn0/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpow4knzn0/model/mlbom.cdx.json
+[deployment-gate] Verificando firma de modelo: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpow4knzn0/model/model.txt.sig --insecure-ignore-tlog=true /tmp/tmpow4knzn0/model/model.txt
 [deployment-gate] stderr de cosign (modelo):
 WARNING: Skipping tlog verification is an insecure practice that lacks of transparency and auditability verification for the blob.
 Error: invalid signature when validating ASN.1 encoded signature
@@ -476,14 +477,14 @@ main.go:74: error during command execution: invalid signature when validating AS
 
 Despliegue RECHAZADO.
 
-✅ OK: C2 Compuerta de despliegue, versión 56 alterada → exit 1
+✅ OK: C2 Compuerta de despliegue, versión 66 alterada → exit 1
 
 [C3] Reinicio de la pasarela con la versión alterada
-   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 56 de 'recoshop-ranker' (run_id=7cd6d577055d4867a135fb4e8ded15a7).
+   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 66 de 'recoshop-ranker' (run_id=24b1e52d28464a44a0f5b511edde8517).
    recoshop-inference-gateway  | Found credentials in environment variables.
    recoshop-inference-gateway  | [inference-gateway] SHA-256 del artefacto descargado: 000702b39267ae3160259bb710de436b0e1f1f6df7226072e259f9add263c88b
    recoshop-inference-gateway  | [inference-gateway] SHA-256 declarado en el ML-BOM:   d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f
-   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmptctsedj_/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmptctsedj_/model/mlbom.cdx.json
+   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpjbgoulyo/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpjbgoulyo/model/mlbom.cdx.json
    recoshop-inference-gateway  | [inference-gateway] ERROR CRÍTICO: el modelo descargado no es el que declara el ML-BOM de esta versión (posible sustitución por un modelo firmado de otra versión). El gateway no lo sirve.
 ✅ OK: C3 Pasarela tras el reinicio → exited
 
@@ -492,15 +493,15 @@ Despliegue RECHAZADO.
 ==============================================================
   ✅ A1 Monitor, lote adversarial                            exit 4 (esperado exit 4)
   ✅ A2 Compuerta de Promoción, retroalimentación envenenada exit 1 (esperado exit 1)
-  ✅ A3 Versión vigente tras el ciclo adversarial            versión 55 (esperado versión 55)
-  ✅ A4 Compuerta de despliegue, versión 55                  exit 0 (esperado exit 0)
+  ✅ A3 Versión vigente tras el ciclo adversarial            versión 65 (esperado versión 65)
+  ✅ A4 Compuerta de despliegue, versión 65                  exit 0 (esperado exit 0)
   ✅ B1 Monitor, lote limpio                                 exit 0 (esperado exit 0)
   ✅ B2 Compuerta de Promoción, retroalimentación limpia     exit 0 (esperado exit 0)
-  ✅ B3 Versión registrada por la Compuerta de Promoción     versión 56 (esperado versión 56)
-  ✅ B4 Compuerta de despliegue, versión 56                  exit 0 (esperado exit 0)
-  ✅ B5 Pasarela en servicio                                 versión 56 (esperado versión 56)
+  ✅ B3 Versión registrada por la Compuerta de Promoción     versión 66 (esperado versión 66)
+  ✅ B4 Compuerta de despliegue, versión 66                  exit 0 (esperado exit 0)
+  ✅ B5 Pasarela en servicio                                 versión 66 (esperado versión 66)
   ✅ B6 Cliente, respuesta firmada                           exit 0 (esperado exit 0)
-  ✅ C2 Compuerta de despliegue, versión 56 alterada         exit 1 (esperado exit 1)
+  ✅ C2 Compuerta de despliegue, versión 66 alterada         exit 1 (esperado exit 1)
   ✅ C3 Pasarela tras el reinicio                            exited (esperado exited)
 
 ✅ RESULTADO GLOBAL: las tres capas se encadenaron según lo esperado.

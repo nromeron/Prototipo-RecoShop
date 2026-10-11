@@ -2,15 +2,15 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer1_provenance_demo.sh
- Fecha (UTC):     2026-10-11T16:26:21Z
- Commit:          bec8d23 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-11T18:10:28Z
+ Commit:          fb29054 (con cambios sin commitear)
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-client  51848ce476ff
+recoshop-prototype-inference-gateway  335741c3fe61
 recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
@@ -20,16 +20,16 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
 [1/5] Escenario: tampered (se espera exit 1)
- Container recoshop-mlflow Running 
  Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-4f00dafdbac1 Creating 
- Container recoshop-prototype-trainer-run-4f00dafdbac1 Created 
+ Container recoshop-prototype-trainer-run-827e51b62a44 Creating 
+ Container recoshop-prototype-trainer-run-827e51b62a44 Created 
 [socio] Exporta 3916 filas desde /export/events y firma el manifiesto.
 [atacante] Altera el lote ya firmado en el almacenamiento externo (200 registros).
 
@@ -59,8 +59,8 @@ Lote RECHAZADO: no ingresa al lago de datos.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-cb3be350d774 Creating 
- Container recoshop-prototype-trainer-run-cb3be350d774 Created 
+ Container recoshop-prototype-trainer-run-c16ef7420d4e Creating 
+ Container recoshop-prototype-trainer-run-c16ef7420d4e Created 
 [atacante] Publica un lote propio con un manifiesto que dice venir del socio, firmado con una clave no registrada.
 
 [compuerta-procedencia] Fuente declarada: recoshop-commerce-api · punto de exportación: /export/events
@@ -89,8 +89,8 @@ Lote RECHAZADO: no ingresa al lago de datos.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-c4904fe29c38 Creating 
- Container recoshop-prototype-trainer-run-c4904fe29c38 Created 
+ Container recoshop-prototype-trainer-run-3fe4a8c35ae0 Creating 
+ Container recoshop-prototype-trainer-run-3fe4a8c35ae0 Created 
 [socio] Exportación comprometida aguas arriba: 10 % de registros sintéticos con relevancia máxima sobre listados falsificados.
 [socio] Exporta 4307 filas desde /export/events y firma el manifiesto.
 
@@ -106,9 +106,9 @@ Lote RECHAZADO: no ingresa al lago de datos.
   ✅ control 2  Integridad del lote (SHA-256 y filas del manifiesto)
   ✅ control 3  Esquema (columnas, tipos y rangos)
   ❌ control 4  Validación estadística básica frente al perfil de referencia
-[sign_model] Firmando artefacto: /tmp/tmpwp30x505/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpwp30x505/record.json.sig --tlog-upload=false --yes /tmp/tmpwp30x505/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmpwp30x505/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmplr0z5mx5/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmplr0z5mx5/record.json.sig --tlog-upload=false --yes /tmp/tmplr0z5mx5/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmplr0z5mx5/record.json.sig
 
 Lote en CUARENTENA: procedencia e integridad verificadas, pero la distribución difiere del perfil de referencia (revisión antes de ingresar al lago de datos).
 
@@ -123,8 +123,8 @@ Lote en CUARENTENA: procedencia e integridad verificadas, pero la distribución 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-80f03870c208 Creating 
- Container recoshop-prototype-trainer-run-80f03870c208 Created 
+ Container recoshop-prototype-trainer-run-6471c6c71733 Creating 
+ Container recoshop-prototype-trainer-run-6471c6c71733 Created 
 [atacante] Escribe en recoshop-provenance un registro que declara aceptado el conjunto de datos de la semilla 7, firmado con su propia clave.
 
 [verificación-de-procedencia] Registro: recoshop-provenance/datasets/cc773bd8a743be97f88bb39086caf3a17c2f1064dbbbc5897c9437d74ef86906.json
@@ -143,8 +143,8 @@ Registro RECHAZADO: no cuenta como procedencia verificada; el ML-BOM de un model
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-236d27cc8137 Creating 
- Container recoshop-prototype-trainer-run-236d27cc8137 Created 
+ Container recoshop-prototype-trainer-run-9cc3eb9c7e8d Creating 
+ Container recoshop-prototype-trainer-run-9cc3eb9c7e8d Created 
 [socio] Exporta 3916 filas desde /export/events y firma el manifiesto.
 
 [compuerta-procedencia] Fuente declarada: recoshop-commerce-api · punto de exportación: /export/events
@@ -159,9 +159,9 @@ Registro RECHAZADO: no cuenta como procedencia verificada; el ML-BOM de un model
   ✅ control 2  Integridad del lote (SHA-256 y filas del manifiesto)
   ✅ control 3  Esquema (columnas, tipos y rangos)
   ✅ control 4  Validación estadística básica frente al perfil de referencia
-[sign_model] Firmando artefacto: /tmp/tmp124ya_0w/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp124ya_0w/record.json.sig --tlog-upload=false --yes /tmp/tmp124ya_0w/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmp124ya_0w/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmp5l_w408y/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp5l_w408y/record.json.sig --tlog-upload=false --yes /tmp/tmp5l_w408y/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmp5l_w408y/record.json.sig
 
 Lote ACEPTADO. Registro de procedencia (firmado por RecoShop): recoshop-provenance/datasets/afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d.json
 ✅ OK: exit 0, según lo esperado.
