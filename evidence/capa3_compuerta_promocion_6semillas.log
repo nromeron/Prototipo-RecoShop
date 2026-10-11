@@ -2,14 +2,14 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_promotion_seeds.sh
- Fecha (UTC):     2026-10-10T00:39:45Z
- Commit:          37ac5d6
- Docker Engine:   28.5.1
- Docker Compose:  2.40.0-desktop.1
+ Fecha (UTC):     2026-10-11T16:37:10Z
+ Commit:          bec8d23 (con cambios sin commitear)
+ Docker Engine:   29.8.2
+ Docker Compose:  5.5.1
  Imágenes:
-recoshop-prototype-trainer  3c6d5e3b1f62
+recoshop-prototype-trainer  aa822e53c741
+recoshop-prototype-feedback-gate  c25777ca94f9
 recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5

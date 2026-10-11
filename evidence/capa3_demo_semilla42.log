@@ -2,14 +2,14 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_demo.sh
- Fecha (UTC):     2026-10-10T00:19:24Z
- Commit:          37ac5d6
- Docker Engine:   28.5.1
- Docker Compose:  2.40.0-desktop.1
+ Fecha (UTC):     2026-10-11T16:30:56Z
+ Commit:          bec8d23 (con cambios sin commitear)
+ Docker Engine:   29.8.2
+ Docker Compose:  5.5.1
  Imágenes:
-recoshop-prototype-trainer  3c6d5e3b1f62
+recoshop-prototype-trainer  aa822e53c741
+recoshop-prototype-feedback-gate  c25777ca94f9
 recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
@@ -21,6 +21,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [1/5] Generando baseline y lotes sintéticos de feedback...
       Limpiando cuarentena de corridas anteriores...
+ Container recoshop-prototype-feedback-gate-run-21347ca90378 Creating 
+ Container recoshop-prototype-feedback-gate-run-21347ca90378 Created 
+ Container recoshop-prototype-feedback-gate-run-0f7914be37d6 Creating 
+ Container recoshop-prototype-feedback-gate-run-0f7914be37d6 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -30,6 +34,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [2/5] Evaluando los 3 lotes en orden clean -> natural -> adversarial...
 
 --- Evaluando batch_clean.csv (se espera exit 0) ---
+ Container recoshop-prototype-feedback-gate-run-a8b37edce86c Creating 
+ Container recoshop-prototype-feedback-gate-run-a8b37edce86c Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_clean.csv
 ==============================================================================
@@ -60,6 +66,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_clean.csv se comportó como se esperaba (exit 0).
 
 --- Evaluando batch_natural_drift.csv (se espera exit 3) ---
+ Container recoshop-prototype-feedback-gate-run-93ba3b755490 Creating 
+ Container recoshop-prototype-feedback-gate-run-93ba3b755490 Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_natural_drift.csv
 ==============================================================================
@@ -91,6 +99,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_natural_drift.csv se comportó como se esperaba (exit 3).
 
 --- Evaluando batch_adversarial.csv (se espera exit 4) ---
+ Container recoshop-prototype-feedback-gate-run-97fa3d15853d Creating 
+ Container recoshop-prototype-feedback-gate-run-97fa3d15853d Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_adversarial.csv
 ==============================================================================
@@ -124,12 +134,14 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_adversarial.csv se comportó como se esperaba (exit 4).
 
 [3/5] Evidencia de cuarentena (reason.json del lote adversarial)...
+ Container recoshop-prototype-feedback-gate-run-772449ec5a26 Creating 
+ Container recoshop-prototype-feedback-gate-run-772449ec5a26 Created 
 {
   "batch_file": "batch_adversarial.csv",
   "decision": "CUARENTENA",
   "exit_code": 4,
   "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
-  "quarantined_at_utc": "2026-10-10T00:20:00.777376+00:00",
+  "quarantined_at_utc": "2026-10-11T16:31:18.194326+00:00",
   "thresholds": {
     "KS_ALPHA": 0.05,
     "KS_STAT_THRESHOLD": 0.04,

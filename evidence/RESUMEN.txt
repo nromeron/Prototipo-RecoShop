@@ -1,4 +1,4 @@
-Captura de evidencia — 2026-10-10T00:45:48Z — commit 37ac5d6
+Captura de evidencia — 2026-10-11T16:44:25Z — commit bec8d23 (con cambios sin commitear)
 
 ✅  capa1_procedencia_datos              exit 0
 ✅  capa1_validador_modelos_externos     exit 0
@@ -12,3 +12,4 @@ Captura de evidencia — 2026-10-10T00:45:48Z — commit 37ac5d6
 ✅  capa3_sensibilidad_amplitud_baja     exit 0
 ✅  capa3_compuerta_promocion            exit 0
 ✅  capa3_compuerta_promocion_6semillas  exit 0
+✅  integracion_tres_capas               exit 0

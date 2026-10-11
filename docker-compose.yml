@@ -205,6 +205,8 @@ services:
       TEMPORAL_CONCENTRATION_WINDOW_SPAN: ${TEMPORAL_CONCENTRATION_WINDOW_SPAN:-2}
       LABEL_MANIPULATION_DELTA_THRESHOLD: ${LABEL_MANIPULATION_DELTA_THRESHOLD:-0.06}
       PYTHONUNBUFFERED: "1"
+      # La imagen no incluye git: MLflow no puede leer el commit y solo avisa.
+      GIT_PYTHON_REFRESH: quiet
     volumes:
       - feedback-data:/app/data
     networks:

@@ -2,14 +2,14 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer2_demo.sh
- Fecha (UTC):     2026-10-10T00:14:31Z
- Commit:          37ac5d6
- Docker Engine:   28.5.1
- Docker Compose:  2.40.0-desktop.1
+ Fecha (UTC):     2026-10-11T16:29:28Z
+ Commit:          bec8d23 (con cambios sin commitear)
+ Docker Engine:   29.8.2
+ Docker Compose:  5.5.1
  Imágenes:
-recoshop-prototype-trainer  3c6d5e3b1f62
+recoshop-prototype-trainer  aa822e53c741
+recoshop-prototype-feedback-gate  c25777ca94f9
 recoshop-prototype-inference-gateway  4bbfdc637cc1
-recoshop-prototype-feedback-gate  3aceb8514cb9
 recoshop-prototype-inference-client  b7d9e989e3f7
 recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
@@ -22,74 +22,88 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [1/6] Claves cosign y Ed25519 verificadas.
 
 [2/6] Levantando infraestructura (MinIO + MLflow)...
- Container recoshop-minio  Running
- Container recoshop-mlflow  Running
- Container recoshop-minio-init  Starting
- Container recoshop-minio-init  Started
- Container recoshop-minio-init  Waiting
- Container recoshop-minio-init  Exited
+ Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
+ Container recoshop-minio-init Starting 
+ Container recoshop-minio-init Started 
+ Container recoshop-minio-init Waiting 
+ Container recoshop-minio-init Exited 
       Esperando a que mlflow esté healthy...
       mlflow está healthy.
 
 [3/6] Registrando una versión fresca del modelo (Capa 1, sin modificarla)...
- Container recoshop-minio  Running
- Container recoshop-mlflow  Running
- Container recoshop-minio-init  Starting
- Container recoshop-minio-init  Started
- Container recoshop-minio-init  Waiting
- Container recoshop-minio-init  Exited
+ Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
+ Container recoshop-minio-init Starting 
+ Container recoshop-minio-init Started 
+ Container recoshop-minio-init Waiting 
+ Container recoshop-minio-init Exited 
+ Container recoshop-mlflow Waiting 
+ Container recoshop-mlflow Healthy 
+ Container recoshop-prototype-trainer-run-af06c28a6566 Creating 
+ Container recoshop-prototype-trainer-run-af06c28a6566 Created 
 [train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
 [train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
-[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-10T00:05:06.934577+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
-[train] MLflow run_id: bee4835f3b8442179adf6649bfa6fe10
+[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T16:26:57.864552+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
+[train] MLflow run_id: 116dc9153ac541dc88467cc1e37c54bd
 [train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-[sign_model] Firmando artefacto: /tmp/tmpkpzqj_2h/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpkpzqj_2h/model.txt.sig --tlog-upload=false --yes /tmp/tmpkpzqj_2h/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmpkpzqj_2h/model.txt.sig
-[train] ML-BOM generado (CycloneDX 1.7): SHA-256 729ea84ffe4b18814016d2fa441b9017db0c15f24981d37de9f3168c9db296f0
-[sign_model] Firmando artefacto: /tmp/tmpkpzqj_2h/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpkpzqj_2h/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpkpzqj_2h/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmpkpzqj_2h/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmpl44mygl_/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpl44mygl_/model.txt.sig --tlog-upload=false --yes /tmp/tmpl44mygl_/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmpl44mygl_/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 6c7cab67b9a2094cfbf381e0af0cef0ebb05633412b420d80f4ebc47d5f98f3e
+[sign_model] Firmando artefacto: /tmp/tmpl44mygl_/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpl44mygl_/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpl44mygl_/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmpl44mygl_/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/10 00:15:23 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 43
-Created version '43' of model 'recoshop-ranker'.
-[train] Modelo registrado: 'recoshop-ranker' versión 43 (run_id=bee4835f3b8442179adf6649bfa6fe10).
+2026/10/11 16:29:44 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 52
+Created version '52' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 52 (run_id=116dc9153ac541dc88467cc1e37c54bd).
 [train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [train] Consulta el run en la UI de MLflow: http://mlflow:5000
 
 [4/6] Levantando inference-gateway y esperando su healthcheck...
- Container recoshop-minio  Running
- Container recoshop-mlflow  Running
- Container recoshop-minio-init  Starting
- Container recoshop-minio-init  Started
- Container recoshop-minio-init  Waiting
- Container recoshop-minio-init  Exited
- Container recoshop-mlflow  Waiting
- Container recoshop-mlflow  Healthy
- Container recoshop-inference-gateway  Starting
- Container recoshop-inference-gateway  Started
+ Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
+ Container recoshop-minio-init Starting 
+ Container recoshop-minio-init Started 
+ Container recoshop-minio-init Waiting 
+ Container recoshop-minio-init Exited 
+ Container recoshop-mlflow Waiting 
+ Container recoshop-mlflow Healthy 
+ Container recoshop-inference-gateway Starting 
+ Container recoshop-inference-gateway Started 
       inference-gateway está healthy.
 
 [5/6] Ejecutando los casos del cliente verificador (client_demo.py)...
 
 --- Caso: valid ---
+ Container recoshop-prototype-inference-client-run-8f0989ef7513 Creating 
+ Container recoshop-prototype-inference-client-run-8f0989ef7513 Created 
 [client] respuesta válida, firma verificada, 5 recomendaciones sin scores crudos (D-02 / D-05 mitigadas).
 [client] CASO valid: OK
 
 --- Caso: invalid-input ---
+ Container recoshop-prototype-inference-client-run-08b36d7c7bf9 Creating 
+ Container recoshop-prototype-inference-client-run-08b36d7c7bf9 Created 
 [client] entrada inválida correctamente rechazada con 422: {'error': 'input_validation_failed', 'details': ['price: in_range(0, 10000) (valor=-50.0)', 'product_popularity: in_range(0, 1) (valor=9.9)']}
 [client] CASO invalid-input: OK
 
 --- Caso: rate-limit ---
+ Container recoshop-prototype-inference-client-run-84cafe03fbbe Creating 
+ Container recoshop-prototype-inference-client-run-84cafe03fbbe Created 
 [client] rate limiting activado correctamente (429 recibido dentro de 35 solicitudes).
 [client] CASO rate-limit: OK
 
 --- Caso: cross-hardening ---
+ Container recoshop-prototype-inference-client-run-453a54566c96 Creating 
+ Container recoshop-prototype-inference-client-run-453a54566c96 Created 
 [client] endurecimiento cruzado verificado: cliente limpio con 5 recomendaciones; cliente sospechoso rechazado por el perfil de referencia y limitado a 3 recomendaciones.
 [client] CASO cross-hardening: OK
 
 --- Caso: tampered-response ---
+ Container recoshop-prototype-inference-client-run-67f6f7594fa6 Creating 
+ Container recoshop-prototype-inference-client-run-67f6f7594fa6 Created 
 [client] la manipulación del payload fue detectada correctamente (firma inválida, D-05 mitigada).
 [client] CASO tampered-response: OK
 
