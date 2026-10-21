@@ -95,22 +95,29 @@ def cosign_verify(blob_path: str, sig_path: str, label: str) -> bool:
     return result.returncode == 0
 
 
-def model_hash_declared_in_mlbom(mlbom_path: str):
-    """SHA-256 del único componente machine-learning-model, o None."""
+def model_ref_declared_in_mlbom(mlbom_path: str):
+    """
+    (SHA-256, run_id) del único componente machine-learning-model del ML-BOM,
+    o (None, None) si el documento no es válido.
+
+    El run_id es la versión del componente: ata el ML-BOM a una versión
+    concreta del registro. Sin esa comprobación, copiar el modelo, el ML-BOM
+    y sus firmas de una versión anterior (reversión completa) pasaría los
+    tres controles, porque los cuatro artefactos son auténticos y coherentes
+    entre sí.
+    """
     try:
         with open(mlbom_path, encoding="utf-8") as f:
             bom = json.load(f)
     except (OSError, json.JSONDecodeError):
-        return None
+        return None, None
     if bom.get("bomFormat") != "CycloneDX":
-        return None
+        return None, None
     models = [c for c in bom.get("components", []) if c.get("type") == "machine-learning-model"]
     if len(models) != 1:
-        return None
-    for h in models[0].get("hashes", []):
-        if h.get("alg") == "SHA-256":
-            return h.get("content")
-    return None
+        return None, None
+    sha = next((h.get("content") for h in models[0].get("hashes", []) if h.get("alg") == "SHA-256"), None)
+    return sha, models[0].get("version")
 
 
 def main():
@@ -160,12 +167,16 @@ def main():
             sys.exit(2)
 
         current_hash = sha256_of_file(model_path)
-        declared_hash = model_hash_declared_in_mlbom(mlbom_path)
+        declared_hash, declared_run = model_ref_declared_in_mlbom(mlbom_path)
         print(f"[deployment-gate] SHA-256 del modelo descargado:     {current_hash}")
         print(f"[deployment-gate] SHA-256 declarado en el ML-BOM:    {declared_hash}")
+        print(f"[deployment-gate] run_id de la versión del registro: {latest.run_id}")
+        print(f"[deployment-gate] run_id declarado en el ML-BOM:     {declared_run}")
 
         c1 = cosign_verify(mlbom_path, mlbom_sig, "ML-BOM")
-        c2 = declared_hash is not None and declared_hash == current_hash
+        hash_ok = declared_hash is not None and declared_hash == current_hash
+        run_ok = declared_run is not None and declared_run == latest.run_id
+        c2 = hash_ok and run_ok
         c3 = cosign_verify(model_path, model_sig, "modelo")
 
     def mark(ok):
@@ -174,7 +185,7 @@ def main():
     print("")
     print("[deployment-gate] Controles de P-03:")
     print(f"  {mark(c1)} C1  Firma del ML-BOM (documento de enlace auténtico)")
-    print(f"  {mark(c2)} C2  Vínculo ML-BOM ↔ modelo (hash declarado = hash descargado)")
+    print(f"  {mark(c2)} C2  Vínculo ML-BOM ↔ modelo y versión (hash y run_id declarados = descargados)")
     print(f"  {mark(c3)} C3  Firma del modelo (artefacto auténtico)")
     print("")
 
@@ -182,7 +193,13 @@ def main():
         print("Los tres controles pasaron. Modelo APROBADO para despliegue.")
         sys.exit(0)
 
-    if c3 and not c2:
+    if c1 and c3 and hash_ok and not run_ok:
+        print(
+            "Modelo, ML-BOM y firmas son auténticos y coherentes entre sí, pero el "
+            "ML-BOM pertenece a otra versión del registro: reversión a una versión "
+            "anterior. Un gate que solo verificara firmas y hash la habría aprobado."
+        )
+    elif c3 and not c2:
         print(
             "El modelo tiene una firma VÁLIDA pero no es el artefacto que declara el "
             "ML-BOM de esta versión: sustitución por un modelo legítimamente firmado "

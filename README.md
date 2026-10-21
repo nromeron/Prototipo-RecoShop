@@ -152,7 +152,7 @@ en producción sin que nadie lo note.
 | Control | Pregunta que responde |
 |---|---|
 | **C1** Firma del ML-BOM | ¿El documento de enlace es auténtico? |
-| **C2** Vínculo ML-BOM ↔ modelo | ¿Este modelo es el que la versión declara? |
+| **C2** Vínculo ML-BOM ↔ modelo y versión | ¿Este modelo es el que declara el ML-BOM, y ese ML-BOM es el de esta versión del registro? |
 | **C3** Firma del modelo | ¿El artefacto es auténtico? |
 
 ```mermaid
@@ -171,19 +171,26 @@ sequenceDiagram
     G-->>G: RECHAZADO (exit 1)
 ```
 
-Tres escenarios, tres resultados:
+Cuatro escenarios, cuatro resultados:
 
 | Escenario | C1 | C2 | C3 | Decisión |
 |---|:---:|:---:|:---:|---|
 | Modelo íntegro | ✅ | ✅ | ✅ | **Aprobado** |
 | Bytes del modelo alterados en el registry | ✅ | ❌ | ❌ | **Rechazado** |
 | Modelo sustituido por otro **legítimamente firmado** | ✅ | ❌ | ✅ | **Rechazado** |
+| **Reversión completa**: modelo, ML-BOM y firmas de la versión anterior | ✅ | ❌ | ✅ | **Rechazado** |
 
 El tercer escenario es el más revelador. La firma del modelo es **válida**:
 es un modelo auténtico de una versión anterior, ligeramente peor
 (NDCG@10 de 0.8796 frente a 0.8818). Un gate que solo verificara firmas lo
 aprobaría. Lo detiene el vínculo con el ML-BOM firmado, que declara
 exactamente qué artefacto corresponde a cada versión.
+
+El cuarto escenario va más lejos: el atacante copia también el ML-BOM y su
+firma, de modo que los cuatro artefactos son auténticos y coherentes entre sí
+y el hash coincide. Lo detiene que el ML-BOM declara el `run_id` de la
+versión para la que se generó, y la compuerta lo compara con el de la versión
+que evalúa.
 
 #### Compuerta de Procedencia de Datos (D-07)
 
@@ -293,7 +300,7 @@ ve afectado.
 
 El gateway es *fail-closed*: al arrancar descarga del registry el modelo, el
 ML-BOM y sus firmas, y antes de servir verifica **la firma del ML-BOM, el
-vínculo entre el ML-BOM y el modelo, y la firma del modelo**, los mismos tres
+vínculo del ML-BOM con el modelo y con la versión, y la firma del modelo**, los mismos tres
 controles del `deployment-gate`. Si alguno falla, el proceso termina. Ante la
 sustitución firmada de la Capa 1, el gateway se niega a arrancar: la firma
 del modelo es válida, pero no es el modelo que declara el ML-BOM. Es la
@@ -443,7 +450,7 @@ códigos de salida, registrado en MLflow, no por el mismo archivo de datos.
 ## Evidencia reproducible
 
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
-las trece demostraciones y guarda cada salida en [`evidence/`](evidence/) con
+las quince demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
 identificadores de imagen), un resumen y un manifiesto SHA-256:
 
@@ -458,8 +465,10 @@ identificadores de imagen), un resumen y un manifiesto SHA-256:
 | Capa 1 · caso positivo | ✅ aprobado |
 | Capa 1 · bytes alterados | ✅ rechazado |
 | Capa 1 · sustitución firmada | ✅ rechazado |
+| Capa 1 · reversión completa | ✅ rechazado |
 | Capa 2 · 8 casos del cliente | ✅ 8/8 |
 | Capa 2 · arranque ante sustitución firmada | ✅ el gateway no arranca |
+| Capa 2 · arranque ante reversión completa | ✅ el gateway no arranca |
 | Capa 3 · demo con semilla 42 | ✅ 0 / 3 / 4 |
 | Capa 3 · sensibilidad | ✅ 18/18 |
 | Capa 3 · frontera (+5 %, +0.03) | ✅ alerta natural 3/6 · limpio y adversarial 6/6 |
@@ -494,10 +503,12 @@ chmod +x scripts/*.sh
 ./scripts/run_layer1_positive_case.sh
 ./scripts/run_layer1_negative_case.sh
 ./scripts/run_layer1_swap_signed_case.sh
+./scripts/run_layer1_rollback_case.sh
 
 # Capa 2 · P-01
 ./scripts/run_layer2_demo.sh
 ./scripts/run_layer2_swap_signed_startup.sh
+./scripts/run_layer2_rollback_startup.sh
 
 # Capa 3 · P-02
 ./scripts/run_layer3_demo.sh

@@ -36,6 +36,11 @@ Modos de ataque (argumento --mode):
                clave legítima, pero que NO es el que esta versión declara.
                C3 pasa (la firma es válida); solo C2 lo detecta. Demuestra el
                aporte específico del ML-BOM firmado como documento de enlace.
+  rollback     Reversión completa: copia sobre la última versión el modelo, el
+               ML-BOM y sus dos firmas de la versión anterior. Los cuatro
+               artefactos son auténticos y coherentes entre sí; C1 y C3 pasan y
+               el hash coincide. Solo lo detecta el vínculo del ML-BOM con la
+               versión del registro (run_id), parte de C2.
 """
 
 import argparse
@@ -94,6 +99,35 @@ def _model_prefix(client: MlflowClient, model_version):
     artifact_uri = client.get_run(model_version.run_id).info.artifact_uri
     parsed = urlparse(artifact_uri)
     return parsed.netloc, f"{parsed.path.lstrip('/')}/model"
+
+
+def copy_from_previous(model_name: str, names) -> None:
+    """Copia los artefactos `names` de la penúltima versión sobre la última."""
+    client = MlflowClient()
+    versions = sorted(
+        client.search_model_versions(f"name='{model_name}'"), key=lambda v: int(v.version)
+    )
+    if len(versions) < 2:
+        raise RuntimeError("Se requieren al menos dos versiones registradas.")
+    source, target = versions[-2], versions[-1]
+    src_bucket, src_prefix = _model_prefix(client, source)
+    dst_bucket, dst_prefix = _model_prefix(client, target)
+    s3 = _s3_client()
+    for name in names:
+        body = s3.get_object(Bucket=src_bucket, Key=f"{src_prefix}/{name}")["Body"].read()
+        s3.put_object(Bucket=dst_bucket, Key=f"{dst_prefix}/{name}", Body=body)
+        print(f"[tamper_model]   {name}: versión {source.version} -> versión {target.version}")
+
+
+def rollback(model_name: str) -> None:
+    """
+    Reversión completa: la última versión pasa a contener, byte a byte, los
+    artefactos firmados de la anterior. El atacante no necesita ninguna clave.
+    """
+    print("[tamper_model] Modo rollback: modelo, ML-BOM y sus firmas de la versión anterior.")
+    copy_from_previous(
+        model_name, ("model.txt", "model.txt.sig", "mlbom.cdx.json", "mlbom.cdx.json.sig")
+    )
 
 
 def swap_signed(model_name: str) -> None:
@@ -157,10 +191,18 @@ def tamper_object(bucket: str, key: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description="Simulación de ataques D-01 (Capa 1)")
-    parser.add_argument("--mode", choices=["append", "swap-signed"], default="append")
+    parser.add_argument("--mode", choices=["append", "swap-signed", "rollback"], default="append")
     args = parser.parse_args()
 
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "http://mlflow:5000"))
+
+    if args.mode == "rollback":
+        rollback(MLFLOW_MODEL_NAME)
+        print(
+            "[tamper_model] Simulación rollback completada. "
+            "Ejecuta ahora el deployment-gate para observar el rechazo."
+        )
+        return
 
     if args.mode == "swap-signed":
         swap_signed(MLFLOW_MODEL_NAME)

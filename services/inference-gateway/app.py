@@ -133,22 +133,21 @@ def _cosign_verify(blob_path: str, sig_path: str) -> subprocess.CompletedProcess
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def _model_hash_declared_in_mlbom(mlbom_path: str):
-    """SHA-256 del único componente machine-learning-model del ML-BOM, o None."""
+def _model_ref_declared_in_mlbom(mlbom_path: str):
+    """(SHA-256, run_id) del único componente machine-learning-model del ML-BOM,
+    o (None, None). El run_id ata el ML-BOM a la versión del registro."""
     try:
         with open(mlbom_path, encoding="utf-8") as f:
             bom = json.load(f)
     except (OSError, json.JSONDecodeError):
-        return None
+        return None, None
     if bom.get("bomFormat") != "CycloneDX":
-        return None
+        return None, None
     models = [c for c in bom.get("components", []) if c.get("type") == "machine-learning-model"]
     if len(models) != 1:
-        return None
-    for h in models[0].get("hashes", []):
-        if h.get("alg") == "SHA-256":
-            return h.get("content")
-    return None
+        return None, None
+    sha = next((h.get("content") for h in models[0].get("hashes", []) if h.get("alg") == "SHA-256"), None)
+    return sha, models[0].get("version")
 
 
 def load_and_verify_model() -> lgb.Booster:
@@ -212,9 +211,10 @@ def load_and_verify_model() -> lgb.Booster:
             sys.exit(1)
 
         current_hash = _sha256_of_file(model_path)
-        declared_hash = _model_hash_declared_in_mlbom(mlbom_path)
+        declared_hash, declared_run = _model_ref_declared_in_mlbom(mlbom_path)
         logger.info(f"[inference-gateway] SHA-256 del artefacto descargado: {current_hash}")
         logger.info(f"[inference-gateway] SHA-256 declarado en el ML-BOM:   {declared_hash}")
+        logger.info(f"[inference-gateway] run_id de la versión: {latest.run_id}; declarado en el ML-BOM: {declared_run}")
 
         mlbom_check = _cosign_verify(mlbom_path, mlbom_sig_path)
         if mlbom_check.returncode != 0:
@@ -223,6 +223,13 @@ def load_and_verify_model() -> lgb.Booster:
                 "El gateway nunca sirve un modelo sin documento de enlace auténtico."
             )
             logger.critical(f"[inference-gateway] stderr de cosign: {mlbom_check.stderr.strip()}")
+            sys.exit(1)
+
+        if declared_run is None or declared_run != latest.run_id:
+            logger.critical(
+                "[inference-gateway] ERROR CRÍTICO: el ML-BOM no corresponde a esta versión "
+                "del registro (posible reversión a una versión anterior). El gateway no la sirve."
+            )
             sys.exit(1)
 
         if declared_hash is None or declared_hash != current_hash:
