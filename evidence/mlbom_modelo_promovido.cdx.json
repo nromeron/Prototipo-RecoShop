@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:07494a53-ccb7-5bee-a21c-21b85f129105",
+  "serialNumber": "urn:uuid:2b4fa7b7-def4-5f7a-922b-d0bf4acf77fb",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-10T00:10:39Z",
+    "timestamp": "2026-10-21T23:19:38Z",
     "tools": {
       "components": [
         {
@@ -21,12 +21,12 @@
       "type": "machine-learning-model",
       "bom-ref": "model-recoshop-ranker",
       "name": "recoshop-ranker",
-      "version": "81f13376a6ca4aeaabf9fdf5ba69742c",
+      "version": "263bbd0b5a0947f9aa8d68f3e4ae5865",
       "description": "Modelo de ranking de productos del caso de estudio RecoShop (sistema de recomendación e-commerce ficticio).",
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c"
+          "content": "d5dd1a5182fb14aaeaaebd15e7197d8f76c69b0edab2299053ab799bb84ecd0f"
         }
       ],
       "modelCard": {
@@ -40,6 +40,9 @@
           "datasets": [
             {
               "ref": "dataset-recoshop-synthetic-sessions"
+            },
+            {
+              "ref": "dataset-recoshop-retraining-feedback"
             }
           ],
           "inputs": [
@@ -57,7 +60,7 @@
           "performanceMetrics": [
             {
               "type": "NDCG@10",
-              "value": "0.8818",
+              "value": "0.8787",
               "slice": "conjunto de evaluación (60 sesiones)"
             }
           ]
@@ -66,7 +69,7 @@
       "properties": [
         {
           "name": "recoshop:mlflow_run_id",
-          "value": "81f13376a6ca4aeaabf9fdf5ba69742c"
+          "value": "263bbd0b5a0947f9aa8d68f3e4ae5865"
         },
         {
           "name": "recoshop:random_seed",
@@ -74,7 +77,7 @@
         },
         {
           "name": "recoshop:n_train_sessions",
-          "value": "240"
+          "value": "540"
         },
         {
           "name": "recoshop:signature",
@@ -116,19 +119,73 @@
         },
         {
           "name": "recoshop:provenance:exported_at",
-          "value": "2026-10-10T00:05:05.674505+00:00"
+          "value": "2026-10-21T23:06:32.476796+00:00"
         },
         {
           "name": "recoshop:provenance:accepted_at",
-          "value": "2026-10-10T00:05:06.934577+00:00"
+          "value": "2026-10-21T23:06:33.063175+00:00"
         },
         {
           "name": "recoshop:provenance:manifest_sha256",
-          "value": "19b6aed1f35a75854e3ef40f796dabaad1e75060931ec1479e60a782b3355af8"
+          "value": "b9ec85abe1e38b34393ade82c884643811c1c5d7719acd7cbde3eedaa21f9e8b"
         },
         {
           "name": "recoshop:provenance:record",
           "value": "s3://recoshop-provenance/datasets/afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d.json"
+        }
+      ]
+    },
+    {
+      "type": "data",
+      "bom-ref": "dataset-recoshop-retraining-feedback",
+      "name": "recoshop-retraining-feedback",
+      "version": "e2e-legitimo-20261021T231824Z",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2f2147e8a3cf1fae486ea5383e69437334864767b752bb142acd382c729a5ae5"
+        }
+      ],
+      "data": [
+        {
+          "type": "dataset",
+          "name": "recoshop-retraining-feedback",
+          "description": "Retroalimentación del ciclo e2e-legitimo-20261021T231824Z (4011 filas, 300 sesiones), aprobada por la Compuerta de Promoción del Modelo Reentrenado (P-02).",
+          "classification": "sintético, sin datos personales"
+        }
+      ],
+      "properties": [
+        {
+          "name": "recoshop:retraining:cycle_id",
+          "value": "e2e-legitimo-20261021T231824Z"
+        },
+        {
+          "name": "recoshop:retraining:monitor_signal",
+          "value": "none"
+        },
+        {
+          "name": "recoshop:retraining:monitor_decisions",
+          "value": "batch_clean.csv=ACEPTADO (exit 0)"
+        },
+        {
+          "name": "recoshop:retraining:monitor_runs",
+          "value": "e96b9381f4524e28a7cbe89c1b9be66d"
+        },
+        {
+          "name": "recoshop:retraining:promotion_decision",
+          "value": "APROBADO (exit 0)"
+        },
+        {
+          "name": "recoshop:retraining:canonical_set_sha256",
+          "value": "642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce"
+        },
+        {
+          "name": "recoshop:retraining:previous_model_version",
+          "value": "82"
+        },
+        {
+          "name": "recoshop:retraining:previous_model_sha256",
+          "value": "a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c"
         }
       ]
     },
@@ -173,6 +230,7 @@
       "ref": "model-recoshop-ranker",
       "dependsOn": [
         "dataset-recoshop-synthetic-sessions",
+        "dataset-recoshop-retraining-feedback",
         "pkg:pypi/lightgbm@4.3.0",
         "pkg:pypi/scikit-learn@1.4.0",
         "pkg:pypi/numpy@1.26.3",
