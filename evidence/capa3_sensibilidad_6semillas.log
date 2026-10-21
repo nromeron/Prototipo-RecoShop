@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_seeds.sh
- Fecha (UTC):     2026-10-11T18:16:33Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:10:46Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -19,10 +19,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 7
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-2ebcc3473f7b Creating 
- Container recoshop-prototype-feedback-gate-run-2ebcc3473f7b Created 
- Container recoshop-prototype-feedback-gate-run-6072bf1ffeba Creating 
- Container recoshop-prototype-feedback-gate-run-6072bf1ffeba Created 
+ Container recoshop-prototype-feedback-gate-run-a3c84896860f Creating 
+ Container recoshop-prototype-feedback-gate-run-a3c84896860f Created 
+ Container recoshop-prototype-feedback-gate-run-ac2d1698b093 Creating 
+ Container recoshop-prototype-feedback-gate-run-ac2d1698b093 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -32,10 +32,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 13
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-79dd39b35889 Creating 
- Container recoshop-prototype-feedback-gate-run-79dd39b35889 Created 
- Container recoshop-prototype-feedback-gate-run-2e2dfd33cb24 Creating 
- Container recoshop-prototype-feedback-gate-run-2e2dfd33cb24 Created 
+ Container recoshop-prototype-feedback-gate-run-b2af6654aef6 Creating 
+ Container recoshop-prototype-feedback-gate-run-b2af6654aef6 Created 
+ Container recoshop-prototype-feedback-gate-run-77b6e2ec3e05 Creating 
+ Container recoshop-prototype-feedback-gate-run-77b6e2ec3e05 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -45,10 +45,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 42
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-66218316339f Creating 
- Container recoshop-prototype-feedback-gate-run-66218316339f Created 
- Container recoshop-prototype-feedback-gate-run-62f575198ef7 Creating 
- Container recoshop-prototype-feedback-gate-run-62f575198ef7 Created 
+ Container recoshop-prototype-feedback-gate-run-b89a5acad191 Creating 
+ Container recoshop-prototype-feedback-gate-run-b89a5acad191 Created 
+ Container recoshop-prototype-feedback-gate-run-aa2f3edeb216 Creating 
+ Container recoshop-prototype-feedback-gate-run-aa2f3edeb216 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -58,10 +58,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 101
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-be44b99530c9 Creating 
- Container recoshop-prototype-feedback-gate-run-be44b99530c9 Created 
- Container recoshop-prototype-feedback-gate-run-0851bd8a688e Creating 
- Container recoshop-prototype-feedback-gate-run-0851bd8a688e Created 
+ Container recoshop-prototype-feedback-gate-run-7b48de4be88c Creating 
+ Container recoshop-prototype-feedback-gate-run-7b48de4be88c Created 
+ Container recoshop-prototype-feedback-gate-run-76a8206b120b Creating 
+ Container recoshop-prototype-feedback-gate-run-76a8206b120b Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -71,10 +71,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 777
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-f909b3a6ee78 Creating 
- Container recoshop-prototype-feedback-gate-run-f909b3a6ee78 Created 
- Container recoshop-prototype-feedback-gate-run-254a17070ae3 Creating 
- Container recoshop-prototype-feedback-gate-run-254a17070ae3 Created 
+ Container recoshop-prototype-feedback-gate-run-55213134f0c2 Creating 
+ Container recoshop-prototype-feedback-gate-run-55213134f0c2 Created 
+ Container recoshop-prototype-feedback-gate-run-2b94e856939a Creating 
+ Container recoshop-prototype-feedback-gate-run-2b94e856939a Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -84,10 +84,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
  SEMILLA 2026
 ==============================================================
- Container recoshop-prototype-feedback-gate-run-b140d4922958 Creating 
- Container recoshop-prototype-feedback-gate-run-b140d4922958 Created 
- Container recoshop-prototype-feedback-gate-run-ee56dc603e7a Creating 
- Container recoshop-prototype-feedback-gate-run-ee56dc603e7a Created 
+ Container recoshop-prototype-feedback-gate-run-17cf4c20cc06 Creating 
+ Container recoshop-prototype-feedback-gate-run-17cf4c20cc06 Created 
+ Container recoshop-prototype-feedback-gate-run-a685541118bc Creating 
+ Container recoshop-prototype-feedback-gate-run-a685541118bc Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv

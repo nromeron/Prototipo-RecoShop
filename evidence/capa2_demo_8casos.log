@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer2_demo.sh
- Fecha (UTC):     2026-10-11T18:14:16Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:08:44Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -22,8 +22,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [1/6] Claves cosign y Ed25519 y certificados TLS verificados.
 
 [2/6] Levantando infraestructura (MinIO + MLflow)...
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
@@ -40,24 +40,24 @@ recoshop-prototype-mlflow  6c81f2d724b5
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-915de5c9d6e2 Creating 
- Container recoshop-prototype-trainer-run-915de5c9d6e2 Created 
+ Container recoshop-prototype-trainer-run-eff00fe6cd11 Creating 
+ Container recoshop-prototype-trainer-run-eff00fe6cd11 Created 
 [train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
 [train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
-[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T18:11:20.206195+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
-[train] MLflow run_id: 86c30057e00b42f08c724cc1d3d69f70
+[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-21T23:06:33.063175+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
+[train] MLflow run_id: 96514003c0074632b221a0a4047c3bb1
 [train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-[sign_model] Firmando artefacto: /tmp/tmptfwmmcq7/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmptfwmmcq7/model.txt.sig --tlog-upload=false --yes /tmp/tmptfwmmcq7/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmptfwmmcq7/model.txt.sig
-[train] ML-BOM generado (CycloneDX 1.7): SHA-256 f7943868468be2d9daef0479eafb7264420f3613b28df9be336c4ba981c1293e
-[sign_model] Firmando artefacto: /tmp/tmptfwmmcq7/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmptfwmmcq7/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmptfwmmcq7/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmptfwmmcq7/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmplbaxzwmd/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmplbaxzwmd/model.txt.sig --tlog-upload=false --yes /tmp/tmplbaxzwmd/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmplbaxzwmd/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 37f99ed3be31ca2ab686d107e0357bbd35999a83cb263bb2bc2d62e91e1b0c67
+[sign_model] Firmando artefacto: /tmp/tmplbaxzwmd/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmplbaxzwmd/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmplbaxzwmd/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmplbaxzwmd/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/11 18:14:31 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 62
-Created version '62' of model 'recoshop-ranker'.
-[train] Modelo registrado: 'recoshop-ranker' versión 62 (run_id=86c30057e00b42f08c724cc1d3d69f70).
+2026/10/21 23:08:53 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 77
+Created version '77' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 77 (run_id=96514003c0074632b221a0a4047c3bb1).
 [train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [train] Consulta el run en la UI de MLflow: http://mlflow:5000
@@ -65,62 +65,63 @@ Created version '62' of model 'recoshop-ranker'.
 [4/6] Levantando inference-gateway y esperando su healthcheck...
  Container recoshop-mlflow Running 
  Container recoshop-minio Running 
- Container recoshop-inference-gateway Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
+ Container recoshop-inference-gateway Starting 
+ Container recoshop-inference-gateway Started 
       inference-gateway está healthy.
 
 [5/6] Ejecutando los casos del cliente verificador (client_demo.py)...
 
 --- Caso: valid ---
- Container recoshop-prototype-inference-client-run-64939a88022e Creating 
- Container recoshop-prototype-inference-client-run-64939a88022e Created 
+ Container recoshop-prototype-inference-client-run-e17fe83cc8aa Creating 
+ Container recoshop-prototype-inference-client-run-e17fe83cc8aa Created 
 [client] respuesta válida, firma verificada, 5 recomendaciones sin scores crudos (D-02 / D-05 mitigadas).
 [client] CASO valid: OK
 
 --- Caso: invalid-input ---
- Container recoshop-prototype-inference-client-run-e9f2a6e76324 Creating 
- Container recoshop-prototype-inference-client-run-e9f2a6e76324 Created 
+ Container recoshop-prototype-inference-client-run-6271cfb8d82c Creating 
+ Container recoshop-prototype-inference-client-run-6271cfb8d82c Created 
 [client] entrada inválida correctamente rechazada con 422: {'error': 'input_validation_failed', 'details': ['price: in_range(0, 10000) (valor=-50.0)', 'product_popularity: in_range(0, 1) (valor=9.9)']}
 [client] CASO invalid-input: OK
 
 --- Caso: rate-limit ---
- Container recoshop-prototype-inference-client-run-4676ba79fe61 Creating 
- Container recoshop-prototype-inference-client-run-4676ba79fe61 Created 
+ Container recoshop-prototype-inference-client-run-2085c505439b Creating 
+ Container recoshop-prototype-inference-client-run-2085c505439b Created 
 [client] rate limiting activado correctamente (429 recibido dentro de 35 solicitudes).
 [client] CASO rate-limit: OK
 
 --- Caso: cross-hardening ---
- Container recoshop-prototype-inference-client-run-adfc26f614ce Creating 
- Container recoshop-prototype-inference-client-run-adfc26f614ce Created 
+ Container recoshop-prototype-inference-client-run-c1dd56b2f76d Creating 
+ Container recoshop-prototype-inference-client-run-c1dd56b2f76d Created 
 [client] endurecimiento cruzado verificado: cliente limpio con 5 recomendaciones; cliente sospechoso rechazado por el perfil de referencia y limitado a 3 recomendaciones.
 [client] CASO cross-hardening: OK
 
 --- Caso: tampered-response ---
- Container recoshop-prototype-inference-client-run-006a1a3cc3f1 Creating 
- Container recoshop-prototype-inference-client-run-006a1a3cc3f1 Created 
+ Container recoshop-prototype-inference-client-run-ee5f49324b0a Creating 
+ Container recoshop-prototype-inference-client-run-ee5f49324b0a Created 
 [client] la manipulación del payload fue detectada correctamente (firma inválida, D-05 mitigada).
 [client] CASO tampered-response: OK
 
 --- Caso: no-client-cert ---
- Container recoshop-prototype-inference-client-run-8be1da84efba Creating 
- Container recoshop-prototype-inference-client-run-8be1da84efba Created 
-[client] sin certificado de cliente: el canal TLS no se estableció (ConnectionError).
+ Container recoshop-prototype-inference-client-run-adde4c02191a Creating 
+ Container recoshop-prototype-inference-client-run-adde4c02191a Created 
+[client] sin certificado de cliente: el canal TLS no se estableció (SSLError).
 [client] CASO no-client-cert: OK
 
 --- Caso: untrusted-cert ---
- Container recoshop-prototype-inference-client-run-cf6b0219ab2a Creating 
- Container recoshop-prototype-inference-client-run-cf6b0219ab2a Created 
+ Container recoshop-prototype-inference-client-run-08c88e5433bb Creating 
+ Container recoshop-prototype-inference-client-run-08c88e5433bb Created 
 [client] certificado de una CA ajena: el canal TLS no se estableció (ConnectionError).
 [client] CASO untrusted-cert: OK
 
 --- Caso: identity-rotation ---
- Container recoshop-prototype-inference-client-run-c3f3f88c1f21 Creating 
- Container recoshop-prototype-inference-client-run-c3f3f88c1f21 Created 
+ Container recoshop-prototype-inference-client-run-58cadec87518 Creating 
+ Container recoshop-prototype-inference-client-run-58cadec87518 Created 
 [client] rotación de identidad neutralizada: tres client_id declarados distintos, un solo estado para el certificado 'demo-client-rotation', que quedó en modo endurecido (3 recomendaciones firmadas).
 [client] CASO identity-rotation: OK
 

@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer2_swap_signed_startup.sh
- Fecha (UTC):     2026-10-11T18:15:07Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:09:21Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -20,32 +20,32 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
 [1/4] Registrando una versión anterior (semilla 7) y la vigente (semilla 42)...
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-9908182d7139 Creating 
- Container recoshop-prototype-trainer-run-9908182d7139 Created 
+ Container recoshop-prototype-trainer-run-07b0a11c796b Creating 
+ Container recoshop-prototype-trainer-run-07b0a11c796b Created 
 [train] NDCG@10 promedio en el conjunto de evaluación: 0.8796
 [train] SHA-256 del dataset de entrenamiento: cc773bd8a743be97f88bb39086caf3a17c2f1064dbbbc5897c9437d74ef86906
 [train] Procedencia del dataset: NO VERIFICADA (el registro no tiene firma válida de RecoShop)
-[train] MLflow run_id: c52d40442e854addb61a32f7cf8099e0
+[train] MLflow run_id: 244fa853db1c4a9785007912f2bea115
 [train] SHA-256 del artefacto (antes de firmar): 1e590f096c455109c36b7a22152e31468dad1e0fa9589d1131f262f7e982eb16
-[sign_model] Firmando artefacto: /tmp/tmp07nr3hki/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp07nr3hki/model.txt.sig --tlog-upload=false --yes /tmp/tmp07nr3hki/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmp07nr3hki/model.txt.sig
-[train] ML-BOM generado (CycloneDX 1.7): SHA-256 b85fcabc42d931ae19abc2251e50b04b3c99a9da5dada18d4a5dd9cf463ab84d
-[sign_model] Firmando artefacto: /tmp/tmp07nr3hki/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp07nr3hki/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmp07nr3hki/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmp07nr3hki/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmp1dcfbjix/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp1dcfbjix/model.txt.sig --tlog-upload=false --yes /tmp/tmp1dcfbjix/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmp1dcfbjix/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 eb76de6683f5d4a226b14f27f826a2491b261eb10e67982348d75cd866cd37b8
+[sign_model] Firmando artefacto: /tmp/tmp1dcfbjix/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp1dcfbjix/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmp1dcfbjix/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmp1dcfbjix/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/11 18:15:20 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 63
-Created version '63' of model 'recoshop-ranker'.
-[train] Modelo registrado: 'recoshop-ranker' versión 63 (run_id=c52d40442e854addb61a32f7cf8099e0).
+2026/10/21 23:09:29 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 78
+Created version '78' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 78 (run_id=244fa853db1c4a9785007912f2bea115).
 [train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [train] Consulta el run en la UI de MLflow: http://mlflow:5000
@@ -57,42 +57,42 @@ Created version '63' of model 'recoshop-ranker'.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-24511d9a519e Creating 
- Container recoshop-prototype-trainer-run-24511d9a519e Created 
+ Container recoshop-prototype-trainer-run-cf92bd6d7a2b Creating 
+ Container recoshop-prototype-trainer-run-cf92bd6d7a2b Created 
 [train] NDCG@10 promedio en el conjunto de evaluación: 0.8818
 [train] SHA-256 del dataset de entrenamiento: afbdc928189dc8ff70831d38bdefb954b035c029318880f2fd78acc830c82c7d
-[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-11T18:11:20.206195+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
-[train] MLflow run_id: 9adeeaf5e3b949fc97e5222bbb19a051
+[train] Procedencia del dataset: VERIFICADA (fuente recoshop-commerce-api, aceptado 2026-10-21T23:06:33.063175+00:00 por la Compuerta de Procedencia; registro firmado por RecoShop)
+[train] MLflow run_id: ce59657b62c7435f8073e5d11416354c
 [train] SHA-256 del artefacto (antes de firmar): a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-[sign_model] Firmando artefacto: /tmp/tmpd_77ttwv/model.txt
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpd_77ttwv/model.txt.sig --tlog-upload=false --yes /tmp/tmpd_77ttwv/model.txt
-[sign_model] Firma generada correctamente en: /tmp/tmpd_77ttwv/model.txt.sig
-[train] ML-BOM generado (CycloneDX 1.7): SHA-256 6130086d12c7269b4b488e284c5c208ab4b63032808a32afff3a2b7252537863
-[sign_model] Firmando artefacto: /tmp/tmpd_77ttwv/mlbom.cdx.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpd_77ttwv/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmpd_77ttwv/mlbom.cdx.json
-[sign_model] Firma generada correctamente en: /tmp/tmpd_77ttwv/mlbom.cdx.json.sig
+[sign_model] Firmando artefacto: /tmp/tmp4ubpz6to/model.txt
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp4ubpz6to/model.txt.sig --tlog-upload=false --yes /tmp/tmp4ubpz6to/model.txt
+[sign_model] Firma generada correctamente en: /tmp/tmp4ubpz6to/model.txt.sig
+[train] ML-BOM generado (CycloneDX 1.7): SHA-256 13bb2abb9b7d4e95072f5df6b3819e2df91da0d0af08db30c483da7479b999c8
+[sign_model] Firmando artefacto: /tmp/tmp4ubpz6to/mlbom.cdx.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp4ubpz6to/mlbom.cdx.json.sig --tlog-upload=false --yes /tmp/tmp4ubpz6to/mlbom.cdx.json
+[sign_model] Firma generada correctamente en: /tmp/tmp4ubpz6to/mlbom.cdx.json.sig
 Registered model 'recoshop-ranker' already exists. Creating a new version of this model...
-2026/10/11 18:15:33 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 64
-Created version '64' of model 'recoshop-ranker'.
-[train] Modelo registrado: 'recoshop-ranker' versión 64 (run_id=9adeeaf5e3b949fc97e5222bbb19a051).
+2026/10/21 23:09:36 INFO mlflow.store.model_registry.abstract_store: Waiting up to 300 seconds for model version to finish creation. Model name: recoshop-ranker, version 79
+Created version '79' of model 'recoshop-ranker'.
+[train] Modelo registrado: 'recoshop-ranker' versión 79 (run_id=ce59657b62c7435f8073e5d11416354c).
 [train] El modelo fue firmado ANTES de registrarse en MLflow, conforme al sub-componente Artifact Signing and Registry Gate de P-03.
 [train] El ML-BOM (documento de enlace de P-03) fue firmado con la misma clave y registrado junto al modelo.
 [train] Consulta el run en la UI de MLflow: http://mlflow:5000
 
 [2/4] Ataque: el modelo vigente y su firma se sustituyen por los de la versión anterior...
- Container recoshop-mlflow Running 
  Container recoshop-minio Running 
+ Container recoshop-mlflow Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-aecd318d3386 Creating 
- Container recoshop-prototype-trainer-run-aecd318d3386 Created 
-[tamper_model] Modo swap-signed: se copiará el modelo firmado de la versión 63 sobre la versión 64.
-[tamper_model]   model.txt: versión 63 -> versión 64
-[tamper_model]   model.txt.sig: versión 63 -> versión 64
+ Container recoshop-prototype-trainer-run-52e5f813afac Creating 
+ Container recoshop-prototype-trainer-run-52e5f813afac Created 
+[tamper_model] Modo swap-signed: se copiará el modelo firmado de la versión 78 sobre la versión 79.
+[tamper_model]   model.txt: versión 78 -> versión 79
+[tamper_model]   model.txt.sig: versión 78 -> versión 79
 [tamper_model] NOTA: el ML-BOM de la versión atacada NO fue modificado (el atacante no puede re-firmarlo sin la clave privada).
 [tamper_model] Simulación swap-signed completada. Ejecuta ahora el deployment-gate para observar el rechazo.
 
@@ -111,11 +111,12 @@ Created version '64' of model 'recoshop-ranker'.
  Container recoshop-inference-gateway Started 
 
 [4/4] Resultado (estado del contenedor: exited)
-   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 64 de 'recoshop-ranker' (run_id=9adeeaf5e3b949fc97e5222bbb19a051).
+   recoshop-inference-gateway  | [inference-gateway] Evaluando la versión 79 de 'recoshop-ranker' (run_id=ce59657b62c7435f8073e5d11416354c).
    recoshop-inference-gateway  | Found credentials in environment variables.
    recoshop-inference-gateway  | [inference-gateway] SHA-256 del artefacto descargado: 1e590f096c455109c36b7a22152e31468dad1e0fa9589d1131f262f7e982eb16
    recoshop-inference-gateway  | [inference-gateway] SHA-256 declarado en el ML-BOM:   a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
-   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmp0ny9m8eo/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmp0ny9m8eo/model/mlbom.cdx.json
+   recoshop-inference-gateway  | [inference-gateway] run_id de la versión: ce59657b62c7435f8073e5d11416354c; declarado en el ML-BOM: ce59657b62c7435f8073e5d11416354c
+   recoshop-inference-gateway  | [inference-gateway] Verificando firma: cosign verify-blob --key /keys/cosign.pub --signature /tmp/tmpak2hp3bo/model/mlbom.cdx.json.sig --insecure-ignore-tlog=true /tmp/tmpak2hp3bo/model/mlbom.cdx.json
    recoshop-inference-gateway  | [inference-gateway] ERROR CRÍTICO: el modelo descargado no es el que declara el ML-BOM de esta versión (posible sustitución por un modelo firmado de otra versión). El gateway no lo sirve.
 
 ✅ RESULTADO: la pasarela se negó a servir el modelo sustituido (comportamiento esperado).

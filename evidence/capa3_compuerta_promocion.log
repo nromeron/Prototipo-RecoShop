@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_promotion_demo.sh
- Fecha (UTC):     2026-10-11T18:22:07Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:13:49Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -20,8 +20,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
 [1/4] Retroalimentación: clean · señal del Monitor: none (se espera exit 0)
- Container recoshop-prototype-trainer-run-0cd8473f92f1 Creating 
- Container recoshop-prototype-trainer-run-0cd8473f92f1 Created 
+ Container recoshop-prototype-trainer-run-326e98a7b5db Creating 
+ Container recoshop-prototype-trainer-run-326e98a7b5db Created 
 [promotion-gate] Escenario de retroalimentación: clean (semilla 500); señal del Monitor: none
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
@@ -47,7 +47,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "APROBADO",
   "exit_code": 0,
   "rule": "Sin degradación global ni selectiva y sin alerta adversarial del Monitor.",
-  "decided_at_utc": "2026-10-11T18:22:26.490368+00:00",
+  "decided_at_utc": "2026-10-21T23:14:06.106414+00:00",
   "feedback_scenario": "clean",
   "monitor_signal": "none",
   "thresholds": {
@@ -90,8 +90,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: exit 0, según lo esperado.
 
 [2/4] Retroalimentación: poisoned · señal del Monitor: none (se espera exit 4)
- Container recoshop-prototype-trainer-run-1f4c4046e8fa Creating 
- Container recoshop-prototype-trainer-run-1f4c4046e8fa Created 
+ Container recoshop-prototype-trainer-run-e9a5da341c9b Creating 
+ Container recoshop-prototype-trainer-run-e9a5da341c9b Created 
 [promotion-gate] Escenario de retroalimentación: poisoned (semilla 500); señal del Monitor: none
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
@@ -118,7 +118,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RETENIDO",
   "exit_code": 4,
   "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global; el Monitor no emitió alerta adversarial. El candidato no se promueve y se escala a revisión humana.",
-  "decided_at_utc": "2026-10-11T18:22:45.378621+00:00",
+  "decided_at_utc": "2026-10-21T23:14:21.861265+00:00",
   "feedback_scenario": "poisoned",
   "monitor_signal": "none",
   "thresholds": {
@@ -164,8 +164,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: exit 4, según lo esperado.
 
 [3/4] Retroalimentación: poisoned · señal del Monitor: adversarial (se espera exit 1)
- Container recoshop-prototype-trainer-run-77ea3c617103 Creating 
- Container recoshop-prototype-trainer-run-77ea3c617103 Created 
+ Container recoshop-prototype-trainer-run-d9449cdcc26b Creating 
+ Container recoshop-prototype-trainer-run-d9449cdcc26b Created 
 [promotion-gate] Escenario de retroalimentación: poisoned (semilla 500); señal del Monitor: adversarial
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
@@ -192,7 +192,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RECHAZADO",
   "exit_code": 1,
   "rule": "Degradación selectiva en la(s) categoría(s) [3] sin degradación global, Y alerta adversarial del Monitor de Drift de Seguridad.",
-  "decided_at_utc": "2026-10-11T18:23:04.072253+00:00",
+  "decided_at_utc": "2026-10-21T23:14:37.862225+00:00",
   "feedback_scenario": "poisoned",
   "monitor_signal": "adversarial",
   "thresholds": {
@@ -238,8 +238,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: exit 1, según lo esperado.
 
 [4/4] Retroalimentación: clean · señal del Monitor: adversarial (se espera exit 4)
- Container recoshop-prototype-trainer-run-de804cc63c6d Creating 
- Container recoshop-prototype-trainer-run-de804cc63c6d Created 
+ Container recoshop-prototype-trainer-run-abb083f58f61 Creating 
+ Container recoshop-prototype-trainer-run-abb083f58f61 Created 
 [promotion-gate] Escenario de retroalimentación: clean (semilla 500); señal del Monitor: adversarial
 [promotion-gate] Conjunto canónico de seguridad: 1500 sesiones, 19617 filas, SHA-256 642ff2d0f48c2b124c1319c08c7ba8c983e5e6089589df39f6c1f8dfba9260ce
 [promotion-gate] Modelo vigente (semilla 42): SHA-256 a4fb66346a9e3d0bad3b1c3dc19a12aa0e06b03adf903d9ab088417ba62fd00c
@@ -266,7 +266,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
   "decision": "RETENIDO",
   "exit_code": 4,
   "rule": "Alerta adversarial del Monitor de Drift de Seguridad sin degradación medible en el conjunto canónico. El candidato no se promueve y se escala a revisión humana.",
-  "decided_at_utc": "2026-10-11T18:23:22.336332+00:00",
+  "decided_at_utc": "2026-10-21T23:14:53.992224+00:00",
   "feedback_scenario": "clean",
   "monitor_signal": "adversarial",
   "thresholds": {

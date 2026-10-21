@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_seeds_low_amplitude.sh
- Fecha (UTC):     2026-10-11T18:20:22Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:12:22Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -21,10 +21,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
 --- Semilla 7 ---
- Container recoshop-prototype-feedback-gate-run-1803655b27d9 Creating 
- Container recoshop-prototype-feedback-gate-run-1803655b27d9 Created 
- Container recoshop-prototype-feedback-gate-run-bb25956dd109 Creating 
- Container recoshop-prototype-feedback-gate-run-bb25956dd109 Created 
+ Container recoshop-prototype-feedback-gate-run-00e6b9daad9b Creating 
+ Container recoshop-prototype-feedback-gate-run-00e6b9daad9b Created 
+ Container recoshop-prototype-feedback-gate-run-9e69b244a901 Creating 
+ Container recoshop-prototype-feedback-gate-run-9e69b244a901 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -32,10 +32,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
 
 --- Semilla 13 ---
- Container recoshop-prototype-feedback-gate-run-f2e8f0a5a067 Creating 
- Container recoshop-prototype-feedback-gate-run-f2e8f0a5a067 Created 
- Container recoshop-prototype-feedback-gate-run-2fecdb74c5a6 Creating 
- Container recoshop-prototype-feedback-gate-run-2fecdb74c5a6 Created 
+ Container recoshop-prototype-feedback-gate-run-d267f0dcd3eb Creating 
+ Container recoshop-prototype-feedback-gate-run-d267f0dcd3eb Created 
+ Container recoshop-prototype-feedback-gate-run-74e9473c5874 Creating 
+ Container recoshop-prototype-feedback-gate-run-74e9473c5874 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -43,10 +43,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
 
 --- Semilla 42 ---
- Container recoshop-prototype-feedback-gate-run-4f0ee37b56dc Creating 
- Container recoshop-prototype-feedback-gate-run-4f0ee37b56dc Created 
- Container recoshop-prototype-feedback-gate-run-1c1cbeb2f789 Creating 
- Container recoshop-prototype-feedback-gate-run-1c1cbeb2f789 Created 
+ Container recoshop-prototype-feedback-gate-run-11c87a8ad813 Creating 
+ Container recoshop-prototype-feedback-gate-run-11c87a8ad813 Created 
+ Container recoshop-prototype-feedback-gate-run-88aa6dfc131e Creating 
+ Container recoshop-prototype-feedback-gate-run-88aa6dfc131e Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -54,10 +54,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
 
 --- Semilla 101 ---
- Container recoshop-prototype-feedback-gate-run-41c54963e10a Creating 
- Container recoshop-prototype-feedback-gate-run-41c54963e10a Created 
- Container recoshop-prototype-feedback-gate-run-fff7a25fd09f Creating 
- Container recoshop-prototype-feedback-gate-run-fff7a25fd09f Created 
+ Container recoshop-prototype-feedback-gate-run-6ee52d4e975d Creating 
+ Container recoshop-prototype-feedback-gate-run-6ee52d4e975d Created 
+ Container recoshop-prototype-feedback-gate-run-2d311dfe2f23 Creating 
+ Container recoshop-prototype-feedback-gate-run-2d311dfe2f23 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -65,10 +65,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
 
 --- Semilla 777 ---
- Container recoshop-prototype-feedback-gate-run-a5682a6e6122 Creating 
- Container recoshop-prototype-feedback-gate-run-a5682a6e6122 Created 
- Container recoshop-prototype-feedback-gate-run-cb1c661047e9 Creating 
- Container recoshop-prototype-feedback-gate-run-cb1c661047e9 Created 
+ Container recoshop-prototype-feedback-gate-run-316868f418b7 Creating 
+ Container recoshop-prototype-feedback-gate-run-316868f418b7 Created 
+ Container recoshop-prototype-feedback-gate-run-13f9311e955a Creating 
+ Container recoshop-prototype-feedback-gate-run-13f9311e955a Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -76,10 +76,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [generate_feedback] Generación completa (semilla fija: reproducible entre ejecuciones).
 
 --- Semilla 2026 ---
- Container recoshop-prototype-feedback-gate-run-f20676270541 Creating 
- Container recoshop-prototype-feedback-gate-run-f20676270541 Created 
- Container recoshop-prototype-feedback-gate-run-c48357e30b66 Creating 
- Container recoshop-prototype-feedback-gate-run-c48357e30b66 Created 
+ Container recoshop-prototype-feedback-gate-run-a55cf923db2b Creating 
+ Container recoshop-prototype-feedback-gate-run-a55cf923db2b Created 
+ Container recoshop-prototype-feedback-gate-run-27ebf1ca47e7 Creating 
+ Container recoshop-prototype-feedback-gate-run-27ebf1ca47e7 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv

@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer1_external_model_demo.sh
- Fecha (UTC):     2026-10-11T18:11:21Z
- Commit:          fb29054 (con cambios sin commitear)
+ Fecha (UTC):     2026-10-21T23:06:34Z
+ Commit:          f36f52f
  Docker Engine:   29.8.2
  Docker Compose:  5.5.1
  Imágenes:
+recoshop-prototype-inference-gateway  3d25a6929882
+recoshop-prototype-trainer  435460b6e5fb
+recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-inference-gateway  335741c3fe61
-recoshop-prototype-trainer  aa822e53c741
 recoshop-prototype-feedback-gate  c25777ca94f9
-recoshop-prototype-deployment-gate  ec2c25f63aa9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -28,8 +28,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-c4f1f311e1bb Creating 
- Container recoshop-prototype-trainer-run-c4f1f311e1bb Created 
+ Container recoshop-prototype-trainer-run-65ee53765868 Creating 
+ Container recoshop-prototype-trainer-run-65ee53765868 Created 
 [proveedor] Publica su modelo base legítimo, firmado.
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
@@ -48,24 +48,24 @@ recoshop-prototype-mlflow  6c81f2d724b5
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ✅ control 3  Comportamiento en entorno aislado
-[sign_model] Firmando artefacto: /tmp/tmp6hn12syd/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp6hn12syd/record.json.sig --tlog-upload=false --yes /tmp/tmp6hn12syd/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmp6hn12syd/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmpbpc98mpr/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpbpc98mpr/record.json.sig --tlog-upload=false --yes /tmp/tmpbpc98mpr/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmpbpc98mpr/record.json.sig
 
 Modelo base ACEPTADO. Registro de validación (firmado por RecoShop): recoshop-provenance/base-models/1cc7d536969e5d058f39baef6ebe3a5f75d2761d155079619cd4e9f10968ca83.json
 ✅ OK: exit 0, según lo esperado.
 
 [2/4] Escenario: impostor (se espera exit 1)
- Container recoshop-minio Running 
  Container recoshop-mlflow Running 
+ Container recoshop-minio Running 
  Container recoshop-minio-init Starting 
  Container recoshop-minio-init Started 
  Container recoshop-minio-init Waiting 
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-f4e7dc49af17 Creating 
- Container recoshop-prototype-trainer-run-f4e7dc49af17 Created 
+ Container recoshop-prototype-trainer-run-0ffd6bfa6173 Creating 
+ Container recoshop-prototype-trainer-run-0ffd6bfa6173 Created 
 [atacante] Suplantación tipográfica: publica en «models-hub/sesions-ranker-base» un modelo firmado con su propia clave.
 
 [validador-modelos] Repositorio: models-hub/sesions-ranker-base · artefacto: model.txt
@@ -99,8 +99,8 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-2ee051b29955 Creating 
- Container recoshop-prototype-trainer-run-2ee051b29955 Created 
+ Container recoshop-prototype-trainer-run-ed2dab753089 Creating 
+ Container recoshop-prototype-trainer-run-ed2dab753089 Created 
 [proveedor] Cuenta comprometida: publica un pickle firmado que ejecuta código al cargarse.
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.pkl
@@ -125,8 +125,8 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
  Container recoshop-minio-init Exited 
  Container recoshop-mlflow Waiting 
  Container recoshop-mlflow Healthy 
- Container recoshop-prototype-trainer-run-2e5cdee820f5 Creating 
- Container recoshop-prototype-trainer-run-2e5cdee820f5 Created 
+ Container recoshop-prototype-trainer-run-78b48daa009c Creating 
+ Container recoshop-prototype-trainer-run-78b48daa009c Created 
 [proveedor] Cuenta comprometida: publica en formato de texto un modelo firmado con puerta trasera (price = 13.37).
 
 [validador-modelos] Repositorio: models-hub/sessions-ranker-base · artefacto: model.txt
@@ -145,9 +145,9 @@ Modelo base RECHAZADO: no ingresa al entrenamiento.
   ✅ control 1  Firma del proveedor con la clave registrada de la fuente
   ✅ control 2  Escaneo del artefacto serializado (sin cargarlo)
   ❌ control 3  Comportamiento en entorno aislado
-[sign_model] Firmando artefacto: /tmp/tmp1l122hl1/record.json
-[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmp1l122hl1/record.json.sig --tlog-upload=false --yes /tmp/tmp1l122hl1/record.json
-[sign_model] Firma generada correctamente en: /tmp/tmp1l122hl1/record.json.sig
+[sign_model] Firmando artefacto: /tmp/tmpx55qzdj1/record.json
+[sign_model] Comando: cosign sign-blob --key /keys/cosign.key --output-signature /tmp/tmpx55qzdj1/record.json.sig --tlog-upload=false --yes /tmp/tmpx55qzdj1/record.json
+[sign_model] Firma generada correctamente en: /tmp/tmpx55qzdj1/record.json.sig
 
 Modelo base en CUARENTENA: firma y formato válidos, pero el comportamiento presenta un disparador estrecho.
 
