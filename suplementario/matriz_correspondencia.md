@@ -56,3 +56,27 @@ Matriz de correspondencia debilidad-candidato, con tipo, justificación y fuente
 | D-07 | S5 Audit Trail inmutable | COMPLEMENTARIA | El registro inmutable de las operaciones de ingesta (fuente, marca de tiempo, volumen, suma de verificación) permite reconstruir el origen de un envenenamiento detectado a posteriori y facilita eliminar los datos comprometidos. | Mauri y Damiani (2022), Repudiation en STRIDE-AI |
 
 *Nota:* en la columna de fuente, OWASP remite a OWASP (2023); ATLAS, a MITRE (2026a); Papernot, a Papernot et al. (2018), con la sección citada. Cuando la correspondencia no tiene respaldo explícito en la literatura se identifica como propuesta de este trabajo o extensión emergente.
+
+## Referencias
+
+Chandramouli, R. (2019). *Security strategies for microservices-based application systems* (NIST Special Publication 800-204). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-204
+
+Chandramouli, R., Butcher, Z. y Chetal, A. (2021). *Attribute-based access control for microservices-based applications using a service mesh* (NIST Special Publication 800-204B). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-204B
+
+Jiang, W., Li, H., Xu, G., Zhang, T. y Lu, R. (2024). A comprehensive defense framework against model extraction attacks. *IEEE Transactions on Dependable and Secure Computing*, *21*(2), 685–700. https://doi.org/10.1109/TDSC.2023.3261327
+
+Kreuzberger, D., Kühl, N. y Hirschl, S. (2023). Machine learning operations (MLOps): Overview, definition, and architecture. *IEEE Access*, *11*, 31866–31879. https://doi.org/10.1109/ACCESS.2023.3262138
+
+Lewis, G. A., Ozkaya, I. y Xu, X. (2021). Software architecture challenges for ML systems. En *2021 IEEE International Conference on Software Maintenance and Evolution (ICSME)* (pp. 634–638). IEEE. https://doi.org/10.1109/ICSME52107.2021.00071
+
+Mauri, L. y Damiani, E. (2022). Modeling threats to AI-ML systems using STRIDE. *Sensors*, *22*(17), Artículo 6662. https://doi.org/10.3390/s22176662
+
+MITRE. (2026a). *MITRE ATLAS: Adversarial threat landscape for artificial-intelligence systems* (versión 5.4.0, 6 de febrero). https://atlas.mitre.org/
+
+OWASP. (2023). *OWASP Machine Learning Security Top Ten* (versión 0.3, borrador). https://owasp.org/www-project-machine-learning-security-top-10/
+
+Papernot, N., McDaniel, P., Sinha, A. y Wellman, M. P. (2018). SoK: Security and privacy in machine learning. En *2018 IEEE European Symposium on Security and Privacy (EuroS&P)* (pp. 399–414). IEEE. https://doi.org/10.1109/EuroSP.2018.00035
+
+Rahman, A., Skjellum, A. y Zhang, Y. (2025). An exploratory study of security vulnerabilities in machine learning deployment projects. En *2025 IEEE/ACM 3rd International Workshop on Software Vulnerability Management (SVM)* (pp. 33–36). IEEE. https://doi.org/10.1109/SVM66695.2025.00009
+
+Shorov, A., Ustundag Soykan, E., Evans, S. y Shammary, B. (2025, agosto). *Visualizing secure MLOps (MLSecOps): A practical guide for building robust AI/ML pipeline security*. Open Source Security Foundation. https://openssf.org/wp-content/uploads/2025/08/OpenSSF_MLSecOps_Whitepaper.pdf

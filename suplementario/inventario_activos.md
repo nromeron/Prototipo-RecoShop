@@ -26,3 +26,17 @@ Material suplementario de la tesis (Anexo A, sección A.2).
 | 4 | Compuerta de promoción | ML08 | Defense Evasion; Persistence | Activo derivado del análisis: sin ella, un modelo comprometido llega a producción |
 
 *Nota:* Zona 1, flujo de entrenamiento; Zona 2, servicio de inferencia; Zona 3, cadena de suministro; Zona 4, ciclo de retroalimentación. Rahman et al. (2025) documentan 149 vulnerabilidades en 12 proyectos de despliegue de ML, con el acceso no autorizado como consecuencia más frecuente.
+
+## Referencias
+
+Chandramouli, R., Butcher, Z. y Chetal, A. (2021). *Attribute-based access control for microservices-based applications using a service mesh* (NIST Special Publication 800-204B). National Institute of Standards and Technology. https://doi.org/10.6028/NIST.SP.800-204B
+
+Goyal, S., Doddapaneni, S., Khapra, M. M. y Ravindran, B. (2023). A survey of adversarial defences and robustness in NLP. *ACM Computing Surveys*, *55*. https://doi.org/10.1145/3593042
+
+Kreuzberger, D., Kühl, N. y Hirschl, S. (2023). Machine learning operations (MLOps): Overview, definition, and architecture. *IEEE Access*, *11*, 31866–31879. https://doi.org/10.1109/ACCESS.2023.3262138
+
+Lewis, G. A., Ozkaya, I. y Xu, X. (2021). Software architecture challenges for ML systems. En *2021 IEEE International Conference on Software Maintenance and Evolution (ICSME)* (pp. 634–638). IEEE. https://doi.org/10.1109/ICSME52107.2021.00071
+
+Rahman, A., Skjellum, A. y Zhang, Y. (2025). An exploratory study of security vulnerabilities in machine learning deployment projects. En *2025 IEEE/ACM 3rd International Workshop on Software Vulnerability Management (SVM)* (pp. 33–36). IEEE. https://doi.org/10.1109/SVM66695.2025.00009
+
+Shorov, A., Ustundag Soykan, E., Evans, S. y Shammary, B. (2025, agosto). *Visualizing secure MLOps (MLSecOps): A practical guide for building robust AI/ML pipeline security*. Open Source Security Foundation. https://openssf.org/wp-content/uploads/2025/08/OpenSSF_MLSecOps_Whitepaper.pdf
