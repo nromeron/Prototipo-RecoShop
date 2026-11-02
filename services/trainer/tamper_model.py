@@ -5,7 +5,7 @@ ESTE SCRIPT NO ES PARTE DEL PIPELINE LEGÍTIMO DE ENTRENAMIENTO.
 
 Simula el escenario de explotación concreto de la debilidad D-01
 (Confianza Implícita en la Integridad de Artefactos del Model Registry),
-descrito en el Entregable A4.2 de la tesis: un atacante que compromete el
+descrito en la sección 3.2 de la tesis: un atacante que compromete el
 almacenamiento del Model Registry (en este prototipo, el bucket
 S3-compatible de MinIO donde MLflow guarda los artefactos) sustituye los
 bytes del modelo YA REGISTRADO Y FIRMADO.

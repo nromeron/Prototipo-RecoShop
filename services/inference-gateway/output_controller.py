@@ -4,18 +4,18 @@ output_controller.py
 Instancia el Sub-componente Output Controller de P-01. Tiene dos
 responsabilidades sobre la respuesta de inferencia:
 
-  (a) Output Information Limiting (P-01, candidato A3): la respuesta
+  (a) Output Information Limiting (P-01, candidato F3): la respuesta
       expone únicamente product_id y rank de los primeros TOP_K
       candidatos -- nunca los scores crudos del modelo -- mitigando la
       extracción de modelo por consulta sistemática descrita en el
-      Escenario A2 de A4.2 (debilidad D-02).
+      escenario de D-02 (sección 3.2 de la tesis).
   (b) Rate limiting: control general de seguridad de API en
       microservicios (NIST SP 800-204), aplicado aquí como un token
       bucket en memoria por client_id.
 
 Relación con la tesis: Patrón P-01 — Secure Inference Gateway,
 Sub-componente 2 (Controlador de Información de Salida). Mitigación de
-D-02 documentada en A4.4 §3.1 / §4.1.
+D-02 documentada en las secciones 3.4 y 4.3.
 
 NOTA DE ALCANCE: el estado del rate limiter vive en memoria del proceso
 (un diccionario Python por client_id), lo cual es una simplificación
@@ -84,7 +84,7 @@ class OutputController:
         Ordena los candidatos por score descendente y retorna únicamente
         product_id y rank para los primeros self.top_k -- los scores
         crudos del modelo NUNCA se incluyen en la respuesta (Output
-        Information Limiting, P-01 candidato A3, mitigación de D-02).
+        Information Limiting, P-01 candidato F3, mitigación de D-02).
         """
         order = sorted(range(len(product_ids)), key=lambda i: scores[i], reverse=True)
         # top_k explícito: lo usa la pasarela para reducir la información

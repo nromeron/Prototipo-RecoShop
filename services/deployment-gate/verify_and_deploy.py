@@ -21,11 +21,11 @@ modelo legítimamente firmado de otra versión (caso "swap-signed").
 
 En este prototipo (Capa 1), "despliegue" es simbólico: el gate solo imprime
 la decisión. En producción, este gate se instancia sobre el pipeline CI/CD
-(GitHub Actions + ArgoCD) tal como describe el Entregable A4.1 de la tesis.
+(GitHub Actions + ArgoCD) tal como describe la sección 3.1 de la tesis.
 
 Relación con la tesis:
   - Debilidad mitigada: D-01.
-  - Patrón: P-03, Artifact Signing and Registry Gate + ML-SBOM como
+  - Patrón: P-03, Artifact Signing and Registry Gate + ML-BOM como
     documento de enlace.
 
 Códigos de salida (contrato semántico del prototipo):

@@ -34,7 +34,7 @@ Columnas generadas (todas las tablas):
     productos objetivo.
 
 Escenarios generados (relación con los escenarios de explotación de D-03
-documentados en A4.2):
+documentados en la sección 3.2 de la tesis):
 
   - baseline.csv (5000 filas): distribución de referencia contra la que
     se comparan todos los lotes.
@@ -50,7 +50,7 @@ documentados en A4.2):
     temporales contiguas, con relevance inflada a 3 para un conjunto
     pequeño de product_id objetivo y product_popularity desplazada
     fuerte (+0.4) solo ahí. Representa el escenario de explotación de
-    D-03 de A4.2: un vendedor (o una red de bots a su servicio) genera
+    D-03 (sección 3.2): un vendedor (o una red de bots a su servicio) genera
     clics/compras falsas concentradas en sus propios productos durante
     una ventana de tiempo corta, para sesgar el próximo ciclo de
     reentrenamiento. Se espera CUARENTENA.

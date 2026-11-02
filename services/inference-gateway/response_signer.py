@@ -1,15 +1,15 @@
 """
 response_signer.py
 ===================
-Instancia el Sub-componente Response Signer de P-01 (firma digital de la
+Instancia el Protector del Canal de Salida de P-01 (firma digital de la
 respuesta de inferencia, mitigación de D-05: integridad de la respuesta
 frente a manipulación en tránsito -- por ejemplo, un actor con posición de
 red dentro del clúster que altere el ranking después de que el modelo
-respondió, sin que el consumidor lo note; ver Escenario A3 de A4.2).
+respondió, sin que el consumidor lo note; ver el escenario de D-05 en la sección 3.2).
 
 Relación con la tesis: Patrón P-01 — Secure Inference Gateway,
-Sub-componente 3 (Protector del Canal / Response Signer). Mitigación de
-D-05 documentada en A4.4 §3.1 / §4.1.
+Sub-componente 3 (Protector del Canal de Salida). Mitigación de
+D-05 documentada en las secciones 3.4 y 4.3.
 
 Usa un par de claves Ed25519 generado localmente para el prototipo (ver
 scripts/generate_response_keys.sh), separado del par de claves cosign de

@@ -7,7 +7,7 @@ RecoShop en formato CycloneDX v1.7 (ECMA-424, 2.ª edición, diciembre de
 
 Relación con la tesis:
   - Patrón P-03 (Trusted ML Artifact Pipeline). El catálogo prescribe el
-    ML-SBOM como documento de enlace del pipeline unificado: vincula el
+    ML-BOM como documento de enlace del pipeline unificado: vincula el
     artefacto del modelo con los datos y las dependencias que lo produjeron.
   - El ML-BOM se FIRMA con la misma clave cosign que el modelo. Un ML-BOM
     sin firma sería un documento que cualquiera con acceso al registry

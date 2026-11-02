@@ -14,7 +14,7 @@
 #      resultado esperado.
 #
 # Relación con la tesis: Patrón P-01 — Secure Inference Gateway, mitigación
-# de D-02, D-04 y D-05 (ver A4.4 §3.1 / §4.1).
+# de D-02, D-04 y D-05 (ver secciones 3.4 y 4.3).
 # =============================================================================
 set -euo pipefail
 

@@ -42,7 +42,7 @@ Escenarios (--scenario):
                  con su propia clave.
   poisoned     — el socio, comprometido aguas arriba, exporta y firma un lote
                  con un 10 % de registros sintéticos que atribuyen relevancia
-                 máxima a listados falsificados (escenario de D-07 en A4.2).
+                 máxima a listados falsificados (escenario de D-07, sección 3.2).
   forged-record — un atacante con escritura en recoshop-provenance fabrica un
                  registro que declara aceptado el conjunto de datos de la
                  semilla 7, firmado con su propia clave. Se lee el registro

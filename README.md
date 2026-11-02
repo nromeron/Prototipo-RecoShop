@@ -10,7 +10,7 @@ validado con evidencia reproducible.**
 ![MLflow](https://img.shields.io/badge/MLflow-Model_Registry-0194E2?logo=mlflow&logoColor=white)
 ![Sigstore cosign](https://img.shields.io/badge/Sigstore-cosign_v2.4.1-2E2F66)
 ![CycloneDX](https://img.shields.io/badge/CycloneDX-1.7_(ECMA--424)-F47B20)
-![Evidencia](https://img.shields.io/badge/evidencia-12%2F12_demos-2EA043)
+![Evidencia](https://img.shields.io/badge/evidencia-15%2F15_demos-2EA043)
 
 </div>
 

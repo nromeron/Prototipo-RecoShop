@@ -5,9 +5,9 @@ Instancia el Sub-componente Input Validator de P-01 (validación estructural
 y de rangos previa a la inferencia, mitigación de D-04).
 
 Relación con la tesis: Patrón P-01 — Secure Inference Gateway,
-Sub-componente 1 (Validador de Entrada). Corresponde al escenario A1 de
-A4.2 (input fuera de distribución en /v1/recommend) y a la mitigación
-descrita en A4.4 §3.1 / §4.1 para la debilidad D-04.
+Sub-componente 1 (Validador de Entrada). Corresponde al escenario de
+D-04 en la sección 3.2 (input fuera de distribución en /v1/recommend) y a
+la mitigación descrita en las secciones 3.4 y 4.3.
 
 Este módulo usa un esquema Pandera declarativo sobre el DataFrame de
 candidatos de una sesión. No realiza inferencia ni conoce nada del

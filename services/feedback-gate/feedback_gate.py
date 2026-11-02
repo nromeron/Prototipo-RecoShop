@@ -3,7 +3,7 @@ feedback_gate.py
 =================
 Implementa el patrón P-02 (Secure Retraining Gate) sobre la debilidad D-03
 (Canal de Retroalimentación No Validado) y, de forma complementaria, la
-variante feedback de D-07. Ver Entregable A4.4 §3.2 / §4.2 de la tesis.
+variante feedback de D-07. Ver secciones 3.4 y 4.4 de la tesis.
 
 Este módulo instancia DOS sub-componentes de P-02, deliberadamente
 distinguidos en el código y en los logs:

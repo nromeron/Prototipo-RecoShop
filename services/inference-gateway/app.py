@@ -40,8 +40,8 @@ excesos de tasa del Controlador elevan la puntuación del cliente; por
 encima del umbral, el Validador aplica el perfil de referencia de
 entrenamiento y el Controlador reduce el número de recomendaciones.
 
-Relación con la tesis: A4.4 §3.1 (Cambios concretos por patrón, P-01) y
-§4.1 (Análisis de impacto en seguridad). Mitigación de D-02, D-04 y D-05.
+Relación con la tesis: secciones 3.4 (arquitectura mitigada, P-01) y
+4.3 (Capa 2 del prototipo). Mitigación de D-02, D-04 y D-05.
 """
 
 import json
@@ -344,7 +344,7 @@ async def recommend(payload: RecommendRequest, request: Request):
         product_ids, scores, top_k=RESTRICTED_TOP_K if hardened else None
     )
 
-    # 5) Response Signer: firma Ed25519 de la respuesta (D-05)
+    # 5) Protector del Canal de Salida: firma Ed25519 de la respuesta (D-05)
     signed_body = _response_signer.sign_payload(
         {"client_id": client_id, "recommendations": recommendations}
     )

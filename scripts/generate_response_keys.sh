@@ -33,7 +33,7 @@ fi
 
 cd "$PROJECT_ROOT"
 
-echo "Generando par de claves Ed25519 (Response Signer, P-01) en $KEYS_DIR ..."
+echo "Generando par de claves Ed25519 (Protector del Canal de Salida, P-01) en $KEYS_DIR ..."
 
 # Se reutiliza la imagen del servicio "inference-gateway" (ya tiene
 # 'cryptography' instalado, ver requirements.txt) en lugar de depender de

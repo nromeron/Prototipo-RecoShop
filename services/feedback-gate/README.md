@@ -3,7 +3,7 @@
 Implementación funcional del patrón **P-02 — Secure Retraining Gate**,
 mitigando **D-03** (Canal de Retroalimentación No Validado) y, de forma
 complementaria, la variante feedback de **D-07**, sobre el caso de
-estudio RecoShop. Ver Entregable A4.4 §3.2 / §4.2 de la tesis.
+estudio RecoShop. Ver secciones 3.4 y 4.4 de la tesis.
 
 ## Dos sub-componentes, explícitamente distinguidos
 
@@ -36,7 +36,7 @@ Ningún umbral está codificado sin su correspondiente variable de entorno.
 | :--- | :--- | :--- | :---: |
 | `batch_clean.csv` | Misma distribución que el baseline. | ACEPTADO | 0 |
 | `batch_natural_drift.csv` | Todas las categorías se desplazan por igual, de forma pequeña y creciente con `time_window` (difuso). | ACEPTADO_CON_ALERTA | 3 |
-| `batch_adversarial.csv` | 20% del lote concentrado en una categoría y dos ventanas temporales contiguas, con relevancia inflada para un conjunto pequeño de productos objetivo (escenario de explotación de D-03 en A4.2). | CUARENTENA | 4 |
+| `batch_adversarial.csv` | 20% del lote concentrado en una categoría y dos ventanas temporales contiguas, con relevancia inflada para un conjunto pequeño de productos objetivo (escenario de explotación de D-03, sección 3.2 de la tesis). | CUARENTENA | 4 |
 
 Un cuarto código de salida, **2**, indica un **error de infraestructura**
 (archivo no encontrado, CSV malformado) y debe distinguirse siempre de una
@@ -57,7 +57,7 @@ explícitamente.
   recomendados para un despliegue real sin recalibración contra tráfico
   de producción.
 - **Sin intervención humana**: el catálogo de patrones prevé una vía de
-  escalamiento a revisión humana para casos ambiguos (ver A4.4 §5.2);
+  escalamiento a revisión humana para casos ambiguos (ver Anexo C de la tesis);
   este prototipo solo implementa la decisión automática de tres vías
   (aceptar / alertar / cuarentena), no el flujo de escalamiento humano.
 

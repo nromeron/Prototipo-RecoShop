@@ -36,8 +36,8 @@ mutua TLS: cada caso presenta el certificado de su propia identidad.
                           y la respuesta firmada lleva la identidad del
                           certificado.
 
-Relación con la tesis: Patrón P-01 — Secure Inference Gateway, A4.4 §3.1 /
-§4.1. Cada caso imprime "[client] CASO <nombre>: OK/FALLO" y sale con
+Relación con la tesis: Patrón P-01 — Secure Inference Gateway (secciones
+3.4 y 4.3). Cada caso imprime "[client] CASO <nombre>: OK/FALLO" y sale con
 código 0 (OK) o 1 (FALLO).
 """
 
@@ -84,7 +84,7 @@ def _load_public_key() -> Ed25519PublicKey:
 def _verify_signature(body: dict, public_key: Ed25519PublicKey) -> bool:
     """
     Reconstruye el JSON canónico del payload firmado y verifica la firma
-    Ed25519 con la clave pública del Response Signer. Retorna False tanto
+    Ed25519 con la clave pública del Protector del Canal de Salida. Retorna False tanto
     si la firma no coincide como si el cuerpo no tiene la forma esperada.
     """
     try:
@@ -247,7 +247,7 @@ def case_tampered_response() -> bool:
 
     # Simulación de manipulación en tránsito (D-05): se altera un producto
     # dentro del payload YA FIRMADO, sin volver a firmar (el atacante no
-    # posee la clave privada del Response Signer).
+    # posee la clave privada del Protector del Canal de Salida).
     recommendations = body.get("payload", {}).get("recommendations", [])
     if not recommendations:
         print("[client] no hay recomendaciones que manipular en la respuesta.")

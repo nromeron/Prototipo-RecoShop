@@ -5,7 +5,7 @@
 # verifica la firma cosign del modelo ANTES de aprobarlo. Es el punto de
 # decisión final del sub-componente Artifact Signing and Registry Gate de
 # P-03: "verificación obligatoria de firma en despliegue: el pipeline
-# CI/CD rechaza cualquier artefacto sin firma válida" (ver A4.4 §3.3).
+# CI/CD rechaza cualquier artefacto sin firma válida" (ver sección 3.4).
 # =============================================================================
 
 FROM ghcr.io/sigstore/cosign/cosign:v2.4.1 AS cosign-bin

@@ -7,7 +7,7 @@ JUNTO CON su firma y sus metadatos.
 
 Este script materializa, en miniatura, el Flujo C del patrón P-03 (Trusted
 ML Artifact Pipeline) descrito en el catálogo de patrones y en el
-Entregable A4.4 de la tesis:
+sección 3.4 de la tesis:
 
     Pipeline de entrenamiento -> firma del artefacto ->
     Model Registry (una versión nueva por ejecución, nunca se sobrescribe
@@ -121,7 +121,7 @@ def train_and_evaluate():
 
     # Evaluación independiente con sklearn.metrics.ndcg_score, calculada por
     # sesión y promediada -- coherente con la métrica NDCG@10 usada como
-    # criterio del Gate de Promoción descrito en A4.1/A4.4 de la tesis.
+    # criterio del Gate de Promoción descrito en las secciones 3.4 y 4.4 de la tesis.
     ndcg_at_10_scores = []
     for session_id in eval_sessions:
         session_df = eval_df[eval_df["session_id"] == session_id]

@@ -5,7 +5,7 @@ Genera un dataset SINTÉTICO y REPRODUCIBLE de interacciones usuario-producto
 para RecoShop, organizado en sesiones (grupos de consulta) con productos
 candidatos y un grado de relevancia (0-3). Es apto para entrenar un modelo
 de ranking (LGBMRanker), equivalente al "modelo de ranking (LightGBM)"
-descrito en el Entregable A4.1 de la tesis (fine-tuning sobre embeddings +
+descrito en la sección 3.1 de la tesis (fine-tuning sobre embeddings +
 LightGBM para producir el ranking final de RecoShop).
 
 Este script NO usa datos reales de ningún sistema de e-commerce: todos los

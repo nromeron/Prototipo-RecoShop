@@ -16,8 +16,8 @@
 #
 # NOTA: este archivo no incluye KServe ni Istio. Esta Capa 1 corre sobre
 # Docker Compose únicamente; en producción, el gate se instancia sobre el
-# pipeline CI/CD (GitHub Actions + ArgoCD) tal como describe el Entregable
-# A4.1 de la tesis, no como un contenedor aislado como aquí.
+# pipeline CI/CD (GitHub Actions + ArgoCD) tal como describe la
+# sección 3.1 de la tesis, no como un contenedor aislado como aquí.
 # =============================================================================
 
 services:

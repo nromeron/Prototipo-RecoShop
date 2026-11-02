@@ -17,7 +17,7 @@
 #
 # Relación con la tesis: Patrón P-02 — Secure Retraining Gate, mitigación
 # de D-03 (y, de forma complementaria, la variante feedback de D-07). Ver
-# A4.4 §3.2 / §4.2.
+# secciones 3.4 y 4.4.
 # =============================================================================
 set -euo pipefail
 
