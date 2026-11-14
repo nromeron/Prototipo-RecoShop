@@ -2,13 +2,14 @@
   "batch_file": "batch_adversarial.csv",
   "decision": "CUARENTENA",
   "exit_code": 4,
-  "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
-  "quarantined_at_utc": "2026-10-21T23:10:44.078290+00:00",
+  "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6) con ji cuadrado significativo (chi2=226.84, p=2.33e-45 < 0.01), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
+  "quarantined_at_utc": "2026-11-14T23:40:38.079549+00:00",
   "thresholds": {
     "KS_ALPHA": 0.05,
     "KS_STAT_THRESHOLD": 0.04,
     "GUARDIAN_MIN_FLAGGED_FEATURES": 1,
     "CONCENTRATION_CATEGORY_THRESHOLD": 0.6,
+    "CATEGORY_CHI2_ALPHA": 0.01,
     "CONCENTRATION_TEMPORAL_THRESHOLD": 0.85,
     "TEMPORAL_CONCENTRATION_WINDOW_SPAN": 2,
     "LABEL_MANIPULATION_DELTA_THRESHOLD": 0.06
@@ -196,7 +197,10 @@
         "6": 0.0,
         "7": 0.0
       },
-      "concentration_metric": "category"
+      "concentration_metric": "category",
+      "chi2_statistic": 226.84058085624272,
+      "chi2_p_value": 2.3277563042902233e-45,
+      "chi2_significant": true
     },
     "concentration_temporal": {
       "concentration": 0.5523465703971119,

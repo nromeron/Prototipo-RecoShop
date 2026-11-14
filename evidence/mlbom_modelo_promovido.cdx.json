@@ -2,10 +2,10 @@
   "$schema": "http://cyclonedx.org/schema/bom-1.7.schema.json",
   "bomFormat": "CycloneDX",
   "specVersion": "1.7",
-  "serialNumber": "urn:uuid:2b4fa7b7-def4-5f7a-922b-d0bf4acf77fb",
+  "serialNumber": "urn:uuid:ec925514-6bfd-5ddb-8730-c0f058c06965",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-10-21T23:19:38Z",
+    "timestamp": "2026-11-14T23:45:10Z",
     "tools": {
       "components": [
         {
@@ -21,7 +21,7 @@
       "type": "machine-learning-model",
       "bom-ref": "model-recoshop-ranker",
       "name": "recoshop-ranker",
-      "version": "263bbd0b5a0947f9aa8d68f3e4ae5865",
+      "version": "970e37ae5b4e465bb10dd7928d99c763",
       "description": "Modelo de ranking de productos del caso de estudio RecoShop (sistema de recomendación e-commerce ficticio).",
       "hashes": [
         {
@@ -69,7 +69,7 @@
       "properties": [
         {
           "name": "recoshop:mlflow_run_id",
-          "value": "263bbd0b5a0947f9aa8d68f3e4ae5865"
+          "value": "970e37ae5b4e465bb10dd7928d99c763"
         },
         {
           "name": "recoshop:random_seed",
@@ -119,15 +119,15 @@
         },
         {
           "name": "recoshop:provenance:exported_at",
-          "value": "2026-10-21T23:06:32.476796+00:00"
+          "value": "2026-11-14T23:37:49.683523+00:00"
         },
         {
           "name": "recoshop:provenance:accepted_at",
-          "value": "2026-10-21T23:06:33.063175+00:00"
+          "value": "2026-11-14T23:37:50.052024+00:00"
         },
         {
           "name": "recoshop:provenance:manifest_sha256",
-          "value": "b9ec85abe1e38b34393ade82c884643811c1c5d7719acd7cbde3eedaa21f9e8b"
+          "value": "f50a8a2d3a98e179244f4067bc06ba99987ff64629b332aa3b973fe5060bc2b9"
         },
         {
           "name": "recoshop:provenance:record",
@@ -139,7 +139,7 @@
       "type": "data",
       "bom-ref": "dataset-recoshop-retraining-feedback",
       "name": "recoshop-retraining-feedback",
-      "version": "e2e-legitimo-20261021T231824Z",
+      "version": "e2e-legitimo-20261114T234425Z",
       "hashes": [
         {
           "alg": "SHA-256",
@@ -150,14 +150,14 @@
         {
           "type": "dataset",
           "name": "recoshop-retraining-feedback",
-          "description": "Retroalimentación del ciclo e2e-legitimo-20261021T231824Z (4011 filas, 300 sesiones), aprobada por la Compuerta de Promoción del Modelo Reentrenado (P-02).",
+          "description": "Retroalimentación del ciclo e2e-legitimo-20261114T234425Z (4011 filas, 300 sesiones), aprobada por la Compuerta de Promoción del Modelo Reentrenado (P-02).",
           "classification": "sintético, sin datos personales"
         }
       ],
       "properties": [
         {
           "name": "recoshop:retraining:cycle_id",
-          "value": "e2e-legitimo-20261021T231824Z"
+          "value": "e2e-legitimo-20261114T234425Z"
         },
         {
           "name": "recoshop:retraining:monitor_signal",
@@ -169,7 +169,7 @@
         },
         {
           "name": "recoshop:retraining:monitor_runs",
-          "value": "e96b9381f4524e28a7cbe89c1b9be66d"
+          "value": "61f12c01b2e541c487471b40b81d391c"
         },
         {
           "name": "recoshop:retraining:promotion_decision",
@@ -181,7 +181,7 @@
         },
         {
           "name": "recoshop:retraining:previous_model_version",
-          "value": "82"
+          "value": "25"
         },
         {
           "name": "recoshop:retraining:previous_model_sha256",
