@@ -85,6 +85,9 @@ GUARDIAN_MIN_FLAGGED_FEATURES = int(os.environ.get("GUARDIAN_MIN_FLAGGED_FEATURE
 # manipulación de etiquetas.
 MIN_GROUP_SIZE = int(os.environ.get("MIN_GROUP_SIZE", "20"))
 CONCENTRATION_CATEGORY_THRESHOLD = float(os.environ.get("CONCENTRATION_CATEGORY_THRESHOLD", "0.6"))
+# Nivel de significancia de la prueba ji cuadrado de homogeneidad (línea base
+# vs lote) que debe acompañar a la concentración por categoría.
+CATEGORY_CHI2_ALPHA = float(os.environ.get("CATEGORY_CHI2_ALPHA", "0.01"))
 CONCENTRATION_TEMPORAL_THRESHOLD = float(os.environ.get("CONCENTRATION_TEMPORAL_THRESHOLD", "0.85"))
 TEMPORAL_CONCENTRATION_WINDOW_SPAN = int(os.environ.get("TEMPORAL_CONCENTRATION_WINDOW_SPAN", "2"))
 LABEL_MANIPULATION_DELTA_THRESHOLD = float(os.environ.get("LABEL_MANIPULATION_DELTA_THRESHOLD", "0.06"))
@@ -203,19 +206,37 @@ def _positive_excess_concentration(counts: pd.Series, expected_per_group: float)
     }
 
 
-def monitor_concentration_index_category(batch: pd.DataFrame) -> dict:
+def monitor_concentration_index_category(baseline: pd.DataFrame, batch: pd.DataFrame) -> dict:
     """
     Monitor de Drift de Seguridad: índice de concentración por categoría.
     Mide si el lote tiene una categoría anormalmente sobre-representada
     respecto a la proporción uniforme esperada (1/n_categorías) -- la
     firma directa de un ataque que reasigna tráfico manipulado hacia un
     único segmento (ver generate_feedback.py, escenario adversarial).
+
+    El índice es ruidoso cuando el exceso total es pequeño: unas pocas filas
+    de más en una categoría bastan para concentrarlo. Por eso se acompaña de
+    una prueba ji cuadrado de homogeneidad (scipy.stats.chi2_contingency)
+    sobre la tabla de 2 filas con los conteos por categoría de la línea base
+    y del lote, en la unión de categorías. La señal de categoría solo cuenta
+    en decide() si, además, la prueba es significativa
+    (chi2_significant: p < CATEGORY_CHI2_ALPHA).
     """
     n_categories = batch["category"].nunique()
     counts = batch["category"].value_counts().sort_index()
     expected = len(batch) / max(n_categories, 1)
     result = _positive_excess_concentration(counts, expected)
     result["concentration_metric"] = "category"
+
+    categories = sorted(set(baseline["category"]) | set(batch["category"]))
+    table = [
+        baseline["category"].value_counts().reindex(categories, fill_value=0).to_numpy(),
+        counts.reindex(categories, fill_value=0).to_numpy(),
+    ]
+    chi2_statistic, chi2_p_value, _, _ = stats.chi2_contingency(table)
+    result["chi2_statistic"] = float(chi2_statistic)
+    result["chi2_p_value"] = float(chi2_p_value)
+    result["chi2_significant"] = bool(chi2_p_value < CATEGORY_CHI2_ALPHA)
     return result
 
 
@@ -306,7 +327,10 @@ def decide(
     CUARENTENA (patrón adversarial/concentrado). El criterio de decisión
     NO se basa únicamente en el KS global: un lote solo llega a
     CUARENTENA si, además de mostrar drift global, al menos una de las
-    señales de concentración del Monitor supera su umbral.
+    señales de concentración del Monitor supera su umbral. La señal de
+    categoría exige las dos condiciones: concentración >=
+    CONCENTRATION_CATEGORY_THRESHOLD y ji cuadrado significativo
+    (p < CATEGORY_CHI2_ALPHA).
     """
     if not guardian_result["global_drift_detected"]:
         return {
@@ -316,11 +340,16 @@ def decide(
         }
 
     adversarial_signals = []
-    if concentration_category["concentration"] >= CONCENTRATION_CATEGORY_THRESHOLD:
+    if (
+        concentration_category["concentration"] >= CONCENTRATION_CATEGORY_THRESHOLD
+        and concentration_category["chi2_significant"]
+    ):
         adversarial_signals.append(
             f"concentración por categoría ({concentration_category['concentration']:.3f} "
-            f">= {CONCENTRATION_CATEGORY_THRESHOLD}), categoría más afectada="
-            f"{concentration_category['top_group']}"
+            f">= {CONCENTRATION_CATEGORY_THRESHOLD}) con ji cuadrado significativo "
+            f"(chi2={concentration_category['chi2_statistic']:.2f}, "
+            f"p={concentration_category['chi2_p_value']:.3g} < {CATEGORY_CHI2_ALPHA}), "
+            f"categoría más afectada={concentration_category['top_group']}"
         )
     if concentration_temporal["concentration"] >= CONCENTRATION_TEMPORAL_THRESHOLD:
         adversarial_signals.append(
@@ -383,6 +412,11 @@ def print_summary_table(batch_name, guardian_result, segment_result, conc_cat, c
         f"(umbral: {CONCENTRATION_CATEGORY_THRESHOLD}) — categoría top: {conc_cat['top_group']}"
     )
     print(
+        f"  Ji cuadrado por categoría (línea base vs lote): estadístico={conc_cat['chi2_statistic']:.4f}  "
+        f"p={conc_cat['chi2_p_value']:.4g} (alfa: {CATEGORY_CHI2_ALPHA}) "
+        f"-> significativo: {conc_cat['chi2_significant']}"
+    )
+    print(
         f"  Temporal:       {conc_temp['concentration']:.4f} "
         f"(umbral: {CONCENTRATION_TEMPORAL_THRESHOLD}, span={conc_temp['window_span']}) "
         f"— ventana top: {conc_temp['top_group']}"
@@ -423,6 +457,7 @@ def quarantine_batch(batch_path: str, decision: dict, metrics: dict) -> None:
             "KS_STAT_THRESHOLD": KS_STAT_THRESHOLD,
             "GUARDIAN_MIN_FLAGGED_FEATURES": GUARDIAN_MIN_FLAGGED_FEATURES,
             "CONCENTRATION_CATEGORY_THRESHOLD": CONCENTRATION_CATEGORY_THRESHOLD,
+            "CATEGORY_CHI2_ALPHA": CATEGORY_CHI2_ALPHA,
             "CONCENTRATION_TEMPORAL_THRESHOLD": CONCENTRATION_TEMPORAL_THRESHOLD,
             "TEMPORAL_CONCENTRATION_WINDOW_SPAN": TEMPORAL_CONCENTRATION_WINDOW_SPAN,
             "LABEL_MANIPULATION_DELTA_THRESHOLD": LABEL_MANIPULATION_DELTA_THRESHOLD,
@@ -455,6 +490,9 @@ def _log_to_mlflow(batch_name, guardian_result, conc_cat, conc_temp, label_signa
         mlflow.log_param("batch_file", batch_name)
         mlflow.log_metric("guardian_n_flagged", guardian_result["n_flagged"])
         mlflow.log_metric("concentration_category", conc_cat["concentration"])
+        mlflow.log_metric("concentration_category_chi2_statistic", conc_cat["chi2_statistic"])
+        mlflow.log_metric("concentration_category_chi2_p_value", conc_cat["chi2_p_value"])
+        mlflow.set_tag("concentration_category_chi2_significant", str(conc_cat["chi2_significant"]))
         mlflow.log_metric("concentration_temporal", conc_temp["concentration"])
         mlflow.log_metric("label_manipulation_max_delta", label_signal["max_delta"])
         mlflow.set_tag("decision", decision["decision"])
@@ -498,7 +536,7 @@ def run_gate(batch_path: str, cycle_id: str = None) -> int:
 
     guardian_result = guardian_ks_global(baseline, batch)
     segment_result = monitor_ks_by_segment(baseline, batch)
-    conc_cat = monitor_concentration_index_category(batch)
+    conc_cat = monitor_concentration_index_category(baseline, batch)
     conc_temp = monitor_concentration_index_temporal(batch)
     label_signal = monitor_label_manipulation_signal(baseline, batch)
 
