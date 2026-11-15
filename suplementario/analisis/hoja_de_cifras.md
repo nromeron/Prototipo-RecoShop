@@ -9,6 +9,8 @@ Fuente de cada cifra: las bitácoras de `evidence/` (revisión de evidencia) y l
 | Revisión de partida | `adadab9` |
 | Código de la captura | `3188db7` (Capa 3: la señal de categoría exige una prueba ji cuadrado frente a la línea base) |
 | Evidencia | `6502292` (recaptura) |
+| Análisis | `484505b` (tasas en 500 semillas, dosis-respuesta y esta hoja) |
+| Entrega | `0deb498` (fichas de aplicación, debilidades candidatas y figuras) |
 | Fecha y ventana de la captura | 14 de noviembre de 2026, 23:37:28–23:45:45 UTC |
 | Docker Engine / Compose | 29.8.2 / 5.6.0 (anterior: 29.8.2 / 5.5.1) |
 | SHA-256 de `evidence/MANIFEST.sha256` | `34c1a833cf66437f2b8dfa077e9c98c14697ea8eebf2bcad5e041391a1531da5` |
