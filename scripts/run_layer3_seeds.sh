@@ -61,7 +61,7 @@ done
 
 echo ""
 if [ "$OVERALL_EXIT" -eq 0 ]; then
-  echo "✅ 18/18 veredictos según contrato: determinismo confirmado en las 6 semillas."
+  echo "✅ 18/18 veredictos según contrato: los 18 veredictos coinciden en las 6 semillas."
 else
   echo "⚠️  Al menos un veredicto se desvió del contrato. Revisar la matriz."
 fi

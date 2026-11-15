@@ -10,7 +10,7 @@ estudio RecoShop. Ver secciones 3.4 y 4.4 de la tesis.
 | Sub-componente | Función | Archivo |
 | :--- | :--- | :--- |
 | **1 — Guardian de Ingesta** | Validación estadística del lote de feedback contra un baseline: KS test global por feature. Responde "¿hay drift, en absoluto?" | `feedback_gate.py`, funciones `guardian_*` |
-| **2 — Monitor de Drift de Seguridad** (versión mínima) | Distingue drift natural (difuso) de drift adversarial (concentrado): KS por segmento, índices de concentración por categoría y por tiempo, señal de manipulación de etiquetas. Responde "si hay drift, ¿es un ataque?" | `feedback_gate.py`, funciones `monitor_*` |
+| **2 — Monitor de Drift de Seguridad** (versión mínima) | Distingue drift natural (difuso) de drift adversarial (concentrado): KS por segmento, índices de concentración por categoría y por tiempo, señal de manipulación de etiquetas. La concentración por categoría solo cuenta si, además, una prueba ji cuadrado de homogeneidad de los conteos por categoría (baseline vs lote) es significativa (`CATEGORY_CHI2_ALPHA`, 0.01 por defecto). Responde "si hay drift, ¿es un ataque?" | `feedback_gate.py`, funciones `monitor_*` |
 
 ## Declaración de honestidad metodológica (léase antes de citar esto como validación)
 

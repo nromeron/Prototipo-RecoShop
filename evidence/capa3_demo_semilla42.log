@@ -2,16 +2,16 @@
  EVIDENCIA — prototipo RecoShop
 ==============================================================
  Demo:            scripts/run_layer3_demo.sh
- Fecha (UTC):     2026-10-21T23:10:25Z
- Commit:          f36f52f
+ Fecha (UTC):     2026-11-14T23:40:29Z
+ Commit:          3188db7
  Docker Engine:   29.8.2
- Docker Compose:  5.5.1
+ Docker Compose:  5.6.0
  Imágenes:
+recoshop-prototype-feedback-gate  db5c5797f1ae
 recoshop-prototype-inference-gateway  3d25a6929882
 recoshop-prototype-trainer  435460b6e5fb
 recoshop-prototype-deployment-gate  33bc87fb0d9a
 recoshop-prototype-inference-client  51848ce476ff
-recoshop-prototype-feedback-gate  c25777ca94f9
 recoshop-prototype-mlflow  6c81f2d724b5
 ==============================================================
 
@@ -21,10 +21,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [1/5] Generando baseline y lotes sintéticos de feedback...
       Limpiando cuarentena de corridas anteriores...
- Container recoshop-prototype-feedback-gate-run-c8e34d7371d7 Creating 
- Container recoshop-prototype-feedback-gate-run-c8e34d7371d7 Created 
- Container recoshop-prototype-feedback-gate-run-a5ccff66d939 Creating 
- Container recoshop-prototype-feedback-gate-run-a5ccff66d939 Created 
+ Container recoshop-prototype-feedback-gate-run-3540cc75a438 Creating 
+ Container recoshop-prototype-feedback-gate-run-3540cc75a438 Created 
+ Container recoshop-prototype-feedback-gate-run-5a1c545675f3 Creating 
+ Container recoshop-prototype-feedback-gate-run-5a1c545675f3 Created 
 [generate_feedback] baseline.csv generado: 5000 filas -> /app/data/baseline.csv
 [generate_feedback] batch_clean.csv generado: 1000 filas -> /app/data/batch_clean.csv
 [generate_feedback] batch_natural_drift.csv generado: 1000 filas -> /app/data/batch_natural_drift.csv
@@ -34,8 +34,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 [2/5] Evaluando los 3 lotes en orden clean -> natural -> adversarial...
 
 --- Evaluando batch_clean.csv (se espera exit 0) ---
- Container recoshop-prototype-feedback-gate-run-6c0aaaf96fec Creating 
- Container recoshop-prototype-feedback-gate-run-6c0aaaf96fec Created 
+ Container recoshop-prototype-feedback-gate-run-0afe31820721 Creating 
+ Container recoshop-prototype-feedback-gate-run-0afe31820721 Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_clean.csv
 ==============================================================================
@@ -54,6 +54,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [Monitor de Drift de Seguridad] Índices de concentración:
   Por categoría:  0.4516 (umbral: 0.6) — categoría top: 5
+  Ji cuadrado por categoría (línea base vs lote): estadístico=7.1425  p=0.4142 (alfa: 0.01) -> significativo: False
   Temporal:       0.5714 (umbral: 0.85, span=2) — ventana top: 5
 
 [Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
@@ -66,8 +67,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_clean.csv se comportó como se esperaba (exit 0).
 
 --- Evaluando batch_natural_drift.csv (se espera exit 3) ---
- Container recoshop-prototype-feedback-gate-run-28f4fd9dcb47 Creating 
- Container recoshop-prototype-feedback-gate-run-28f4fd9dcb47 Created 
+ Container recoshop-prototype-feedback-gate-run-809a4df2edab Creating 
+ Container recoshop-prototype-feedback-gate-run-809a4df2edab Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_natural_drift.csv
 ==============================================================================
@@ -86,6 +87,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [Monitor de Drift de Seguridad] Índices de concentración:
   Por categoría:  0.3542 (umbral: 0.6) — categoría top: 7
+  Ji cuadrado por categoría (línea base vs lote): estadístico=7.5335  p=0.3755 (alfa: 0.01) -> significativo: False
   Temporal:       0.4138 (umbral: 0.85, span=2) — ventana top: 5
 
 [Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
@@ -99,8 +101,8 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_natural_drift.csv se comportó como se esperaba (exit 3).
 
 --- Evaluando batch_adversarial.csv (se espera exit 4) ---
- Container recoshop-prototype-feedback-gate-run-9577a40f92a3 Creating 
- Container recoshop-prototype-feedback-gate-run-9577a40f92a3 Created 
+ Container recoshop-prototype-feedback-gate-run-43a82b634459 Creating 
+ Container recoshop-prototype-feedback-gate-run-43a82b634459 Created 
 ==============================================================================
  RESUMEN — feedback_gate.py sobre batch_adversarial.csv
 ==============================================================================
@@ -119,6 +121,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [Monitor de Drift de Seguridad] Índices de concentración:
   Por categoría:  1.0000 (umbral: 0.6) — categoría top: 3
+  Ji cuadrado por categoría (línea base vs lote): estadístico=226.8406  p=2.328e-45 (alfa: 0.01) -> significativo: True
   Temporal:       0.5523 (umbral: 0.85, span=2) — ventana top: 4
 
 [Monitor de Drift de Seguridad] Señal de manipulación de etiquetas (relevance==3):
@@ -126,7 +129,7 @@ recoshop-prototype-mlflow  6c81f2d724b5
 
 [Decisión]
   CUARENTENA (exit code 4)
-  Regla: El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3
+  Regla: El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6) con ji cuadrado significativo (chi2=226.84, p=2.33e-45 < 0.01), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3
 ==============================================================================
 [feedback_gate] Lote copiado a cuarentena: /app/data/quarantine/batch_adversarial.csv
 [feedback_gate] Evidencia de la decisión: /app/data/quarantine/batch_adversarial.csv.reason.json
@@ -134,19 +137,20 @@ recoshop-prototype-mlflow  6c81f2d724b5
 ✅ OK: batch_adversarial.csv se comportó como se esperaba (exit 4).
 
 [3/5] Evidencia de cuarentena (reason.json del lote adversarial)...
- Container recoshop-prototype-feedback-gate-run-08739996b925 Creating 
- Container recoshop-prototype-feedback-gate-run-08739996b925 Created 
+ Container recoshop-prototype-feedback-gate-run-ad76d761594b Creating 
+ Container recoshop-prototype-feedback-gate-run-ad76d761594b Created 
 {
   "batch_file": "batch_adversarial.csv",
   "decision": "CUARENTENA",
   "exit_code": 4,
-  "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
-  "quarantined_at_utc": "2026-10-21T23:10:44.078290+00:00",
+  "reason": "El Guardian detectó drift global Y el Monitor de Drift de Seguridad detectó un patrón concentrado: concentración por categoría (1.000 >= 0.6) con ji cuadrado significativo (chi2=226.84, p=2.33e-45 < 0.01), categoría más afectada=3; manipulación de etiquetas (delta=0.115 >= 0.06), categoría=3",
+  "quarantined_at_utc": "2026-11-14T23:40:38.079549+00:00",
   "thresholds": {
     "KS_ALPHA": 0.05,
     "KS_STAT_THRESHOLD": 0.04,
     "GUARDIAN_MIN_FLAGGED_FEATURES": 1,
     "CONCENTRATION_CATEGORY_THRESHOLD": 0.6,
+    "CATEGORY_CHI2_ALPHA": 0.01,
     "CONCENTRATION_TEMPORAL_THRESHOLD": 0.85,
     "TEMPORAL_CONCENTRATION_WINDOW_SPAN": 2,
     "LABEL_MANIPULATION_DELTA_THRESHOLD": 0.06
@@ -334,7 +338,10 @@ recoshop-prototype-mlflow  6c81f2d724b5
         "6": 0.0,
         "7": 0.0
       },
-      "concentration_metric": "category"
+      "concentration_metric": "category",
+      "chi2_statistic": 226.84058085624272,
+      "chi2_p_value": 2.3277563042902233e-45,
+      "chi2_significant": true
     },
     "concentration_temporal": {
       "concentration": 0.5523465703971119,

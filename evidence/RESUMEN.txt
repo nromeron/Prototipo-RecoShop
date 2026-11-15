@@ -1,4 +1,4 @@
-Captura de evidencia — 2026-10-21T23:20:25Z — commit f36f52f
+Captura de evidencia — 2026-11-14T23:45:45Z — commit 3188db7
 
 ✅  capa1_procedencia_datos              exit 0
 ✅  capa1_validador_modelos_externos     exit 0

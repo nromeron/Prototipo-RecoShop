@@ -329,8 +329,10 @@ Dos sub-componentes en cascada:
 - **Guardián de Ingesta** — prueba de Kolmogórov-Smirnov por feature contra
   un baseline (α = 0.05, estadístico mínimo 0.04). ¿Cambió la distribución?
 - **Monitor de Drift de Seguridad** — si hubo cambio, ¿tiene la forma de un
-  ataque? Mide la **concentración** del exceso por categoría (umbral 0.6) y
-  por ventana temporal (umbral 0.85), y la **señal de manipulación de
+  ataque? Mide la **concentración** del exceso por categoría (umbral 0.6,
+  que solo cuenta si además una prueba ji cuadrado de homogeneidad de los
+  conteos por categoría frente al baseline da p < 0.01) y por ventana
+  temporal (umbral 0.85), y la **señal de manipulación de
   etiquetas**: el aumento de la proporción de relevancia máxima por
   categoría (umbral 0.06).
 

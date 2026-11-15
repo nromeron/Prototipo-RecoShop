@@ -1,6 +1,8 @@
 # Resúmenes SHA-256 de la captura final
 
-Captura del 21 de octubre de 2026 (23:06:01–23:20:25 UTC), código en la revisión `f36f52f`, bitácoras en este directorio. El entrenamiento es determinista: con la misma semilla, cada captura produce los mismos resúmenes. Las versiones del registro cambian entre capturas y figuran en cada bitácora.
+Captura del 14 de noviembre de 2026 (23:37:28–23:45:45 UTC), código en la revisión `3188db7`, bitácoras en este directorio. El entrenamiento es determinista: con la misma semilla, cada captura produce los mismos resúmenes. Las versiones del registro cambian entre capturas y figuran en cada bitácora.
+
+Esta captura se hizo en un PC distinto al de la anterior, con las mismas imágenes de Docker (salvo `feedback-gate`, reconstruida con el cambio de la Capa 3) y el servicio `trainer` limitado a cuatro hilos (`LOKY_MAX_CPU_COUNT=4`): LightGBM escribe `num_threads` en el archivo del modelo y ese valor entra en el resumen; con cuatro hilos, los resúmenes coinciden con la captura anterior.
 
 | Artefacto | Resumen SHA-256 |
 |---|---|
