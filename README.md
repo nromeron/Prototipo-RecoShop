@@ -451,6 +451,8 @@ códigos de salida, registrado en MLflow, no por el mismo archivo de datos.
 
 ## Evidencia reproducible
 
+Imágenes (noviembre de 2026). Docker Hub ya no sirve minio/minio ni minio/mc, y la imagen mlflow reconstruida hoy no arranca porque su Dockerfile no fija SQLAlchemy. La captura de evidence/ usó las imágenes de la captura anterior, con trainer limitado a cuatro hilos; el detalle está en suplementario/analisis/hoja_de_cifras.md, sección 1. 
+
 Toda afirmación de este README tiene un log detrás. Un solo comando ejecuta
 las quince demostraciones y guarda cada salida en [`evidence/`](evidence/) con
 un encabezado de procedencia (fecha, commit, versiones de Docker e
